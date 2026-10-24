@@ -496,6 +496,7 @@ const PRODUCTS=[
 ];
 const PS_PRICE=300;
 let cart={},sales=[],cfg={},psTickets=0,_cb=null,_db=null;
+let _fbSalesRef=null,_fbCfgRef=null,_fbCounterRef=null,_fbWriteTs=0;
 
 function load(){
   try{const s=localStorage.getItem('cb_s');if(s)sales=JSON.parse(s);}catch(e){sales=[]}
@@ -508,8 +509,18 @@ function load(){
   for(const s of sales){if(s.called==null){s.called=true;ch=true;}}
   if(ch)saveS();
 }
-function saveS(){try{localStorage.setItem('cb_s',JSON.stringify(sales));}catch(e){}}
-function saveCfg(){try{localStorage.setItem('cb_cfg',JSON.stringify(cfg));}catch(e){}}
+function saveS(){
+  try{localStorage.setItem('cb_s',JSON.stringify(sales));}catch(e){}
+  if(_fbSalesRef){
+    _fbWriteTs=Date.now();
+    const obj={};sales.forEach(s=>{ obj[String(s.num)]=s; });
+    _fbSalesRef.set(obj).catch(()=>{});
+  }
+}
+function saveCfg(){
+  try{localStorage.setItem('cb_cfg',JSON.stringify(cfg));}catch(e){}
+  if(_fbCfgRef){_fbCfgRef.set(cfg).catch(()=>{});}
+}
 
 function psUsed(){return sales.reduce((n,s)=>n+(s.psTickets||0),0);}
 function psRemain(){return Math.max(0,cfg.psIssued-psUsed()-cfg.psRefunds);}
@@ -723,8 +734,23 @@ function openCheckout(){
   document.getElementById('ov-checkout').classList.add('on');
 }
 
-function completeSale(){
-  const num=nextNum(),pst=psTickets,disc=psDiscount();
+async function completeSale(){
+  // 番号をFirebase transactionでアトミックに取得（複数端末の衝突防止）
+  let num;
+  if(_fbCounterRef){
+    try{
+      const mx=cfg.numMax||99;
+      const result=await _fbCounterRef.transaction(cur=>{
+        const used=new Set(sales.map(s=>s.num));
+        let next=((cur||0)%mx)+1;
+        // 使用済みならスキップ（最大mx回試す）
+        for(let i=0;i<mx;i++){if(!used.has(next))break;next=next%mx+1;}
+        return next;
+      });
+      num=result.snapshot.val();
+    }catch(e){num=nextNum();}
+  }else{num=nextNum();}
+  const pst=psTickets,disc=psDiscount();
   const items=PRODUCTS.filter(p=>(cart[p.id]||0)>0).map(p=>({id:p.id,name:p.name,qty:cart[p.id],price:p.price}));
   const total=cartTotal(),now=new Date();
   const time=`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
@@ -1035,16 +1061,20 @@ function copyDisplayUrl(){
 }
 
 function initDb(){
-  if(!FIREBASE_CONFIG.apiKey)return; // 未設定
+  if(!FIREBASE_CONFIG.apiKey)return;
   try{
     const app=firebase.initializeApp(FIREBASE_CONFIG);
     const fbdb=firebase.database(app);
-    const stateRef=fbdb.ref('state');
-    _db=stateRef; // write: _db.set(data)
+    _db=fbdb.ref('state');
+    _fbSalesRef=fbdb.ref('sales');
+    _fbCfgRef=fbdb.ref('cfg');
+    _fbCounterRef=fbdb.ref('counter');
+
     if(isDisplayMode()){
+      // お客様表示：stateのみ購読
       const el=document.getElementById('disp-status');
       if(el)el.textContent='同期中…';
-      stateRef.on('value',snap=>{
+      _db.on('value',snap=>{
         if(el)el.textContent='';
         const d=snap.val()||{};
         const lc=d.lastCalled||cfg.lastCalled||[];
@@ -1052,6 +1082,28 @@ function initDb(){
         const pn=d.pendingNums||[];
         const prev=lc.filter(n=>!pn.includes(n)).slice(0,4);
         _applyDisplayState(pn,{prevNums:prev,uncalledCount:d.uncalledCount||0,nextNum:d.nextNum??null,avgMin:d.avgMin??null});
+      });
+    }else{
+      // スタッフ画面：sales・cfg をリアルタイム同期
+      _fbSalesRef.on('value',snap=>{
+        if(Date.now()-_fbWriteTs<600)return; // 自分の書き込みエコーを無視
+        const d=snap.val();
+        if(d===null)return;
+        const arr=Object.values(d).sort((a,b)=>(b.ts||0)-(a.ts||0));
+        sales=arr;
+        try{localStorage.setItem('cb_s',JSON.stringify(sales));}catch(_){}
+        renderQueue();renderPsCard();
+        syncDisplayState();
+      });
+      _fbCfgRef.on('value',snap=>{
+        if(Date.now()-_fbWriteTs<600)return;
+        const d=snap.val();
+        if(d===null)return;
+        Object.assign(cfg,d);
+        try{localStorage.setItem('cb_cfg',JSON.stringify(cfg));}catch(_){}
+        const el=document.getElementById('nummax-input');
+        if(el)el.value=cfg.numMax;
+        renderPsCard();renderCart();
       });
     }
   }catch(e){console.error('Firebase init error',e);}
