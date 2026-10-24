@@ -376,7 +376,17 @@ body{
         <div class="setting-name">番号の上限</div>
         <div class="setting-desc">上限に達したら1番から再開します</div>
       </div>
-      <input class="setting-input" type="number" min="10" max="999" id="nummax-input" oninput="setNumMax(this.value)">
+      <div style="display:flex;gap:6px;align-items:center">
+        <input class="setting-input" type="number" min="10" max="999" id="nummax-input" disabled style="opacity:.5" onchange="confirmNumMax(this.value)">
+        <button id="nummax-lock-btn" class="btn btn-ghost" style="padding:6px 10px;font-size:13px;white-space:nowrap" onclick="unlockNumMax()">変更</button>
+      </div>
+    </div>
+    <div class="setting-row" style="border-top:1px solid var(--border);margin-top:10px;padding-top:10px">
+      <div class="setting-info">
+        <div class="setting-name">予想待ち時間（分/人）</div>
+        <div class="setting-desc">0にすると実績から自動計算します</div>
+      </div>
+      <input class="setting-input" type="number" min="0" max="60" id="waitmin-input" oninput="setWaitMin(this.value)">
     </div>
   </div>
   <div class="sec">Excel連携</div>
@@ -496,7 +506,7 @@ const PRODUCTS=[
 ];
 const PS_PRICE=300;
 let cart={},sales=[],cfg={},psTickets=0,_cb=null,_db=null;
-let _fbSalesRef=null,_fbCfgRef=null,_fbCounterRef=null,_fbWriteTs=0;
+let _fbSalesRef=null,_fbCounterRef=null;
 
 function load(){
   try{const s=localStorage.getItem('cb_s');if(s)sales=JSON.parse(s);}catch(e){sales=[]}
@@ -512,14 +522,12 @@ function load(){
 function saveS(){
   try{localStorage.setItem('cb_s',JSON.stringify(sales));}catch(e){}
   if(_fbSalesRef){
-    _fbWriteTs=Date.now();
     const obj={};sales.forEach(s=>{ obj[String(s.num)]=s; });
     _fbSalesRef.set(obj).catch(()=>{});
   }
 }
 function saveCfg(){
   try{localStorage.setItem('cb_cfg',JSON.stringify(cfg));}catch(e){}
-  if(_fbCfgRef){_fbCfgRef.set(cfg).catch(()=>{});}
 }
 
 function psUsed(){return sales.reduce((n,s)=>n+(s.psTickets||0),0);}
@@ -549,7 +557,13 @@ const PAGES=['sell','settings'];
 function goPage(id){
   PAGES.forEach(p=>document.getElementById('page-'+p).classList.toggle('on',p===id));
   document.querySelectorAll('.nav-tab').forEach((t,i)=>t.classList.toggle('on',PAGES[i]===id));
-  if(id==='settings')document.getElementById('nummax-input').value=cfg.numMax;
+  if(id==='settings'){
+    const inp=document.getElementById('nummax-input');
+    inp.value=cfg.numMax;inp.disabled=true;inp.style.opacity='.5';
+    const btn=document.getElementById('nummax-lock-btn');
+    btn.textContent='変更';btn.onclick=unlockNumMax;
+    document.getElementById('waitmin-input').value=cfg.waitMin||0;
+  }
 }
 
 function renderPsCard(){
@@ -586,10 +600,15 @@ function pendingNums(){
   return sales.filter(s=>s.called&&!s.received).sort((a,b)=>(a.ts||0)-(b.ts||0)).map(s=>s.num);
 }
 
+function effectiveAvgMin(){
+  if(cfg.waitMin>0)return cfg.waitMin;
+  return calcAvgServiceMin();
+}
+
 function syncDisplayState(){
   const uc=uncalled();
   const nextNum=uc.length?uc[0].num:null;
-  const avgMin=calcAvgServiceMin();
+  const avgMin=effectiveAvgMin();
   const uncalledCount=uc.length;
   const pn=pendingNums();
   if(_db)try{_db.set({lastCalled:cfg.lastCalled||[],ts:Date.now(),uncalledCount,nextNum,avgMin,pendingNums:pn});}catch(_){}
@@ -763,7 +782,22 @@ async function completeSale(){
 
 function renderStats(){}
 
-function setNumMax(v){cfg.numMax=Math.max(10,Math.min(999,parseInt(v)||99));saveCfg();}
+function unlockNumMax(){
+  const inp=document.getElementById('nummax-input');
+  const btn=document.getElementById('nummax-lock-btn');
+  inp.disabled=false;inp.style.opacity='1';inp.focus();inp.select();
+  btn.textContent='確定';btn.onclick=()=>confirmNumMax(inp.value);
+}
+function confirmNumMax(v){
+  const n=Math.max(10,Math.min(999,parseInt(v)||99));
+  cfg.numMax=n;saveCfg();
+  const inp=document.getElementById('nummax-input');
+  const btn=document.getElementById('nummax-lock-btn');
+  inp.value=n;inp.disabled=true;inp.style.opacity='.5';
+  btn.textContent='変更';btn.onclick=unlockNumMax;
+  showToast('番号の上限を'+n+'に設定しました');
+}
+function setWaitMin(v){cfg.waitMin=Math.max(0,Math.min(60,parseInt(v)||0));saveCfg();syncDisplayState();}
 
 function askReset(type){
   document.getElementById('confirm-msg').innerHTML=type==='sales'
@@ -771,7 +805,10 @@ function askReset(type){
     :'全データ（売上・前売り券・設定）を削除します。<br>この操作は取り消せません。';
   _cb=()=>{
     if(type==='sales'){sales=[];}
-    else{sales=[];cfg={psIssued:30,psRefunds:0,numMax:99};}
+    else{
+      sales=[];cfg={psIssued:30,psRefunds:0,numMax:99};
+      if(_fbCounterRef)_fbCounterRef.set(0).catch(()=>{});
+    }
     cart={};psTickets=0;saveS();saveCfg();
     renderProducts();renderCart();renderQueue();renderPsCard();
     showToast('リセットしました');
@@ -920,6 +957,7 @@ function showCopyBox(text){
   box.appendChild(btn);ov.appendChild(box);
   document.body.appendChild(ov);ta.select();
 }
+
 function importExcel(input){
   const file=input.files[0];if(!file)return;
   const reader=new FileReader();
@@ -966,7 +1004,8 @@ function importExcel(input){
       if(!newSales.length){showToast('読み込めるデータがありませんでした');return;}
       sales=newSales.sort((a,b)=>b.num-a.num);
       saveS();renderCart();renderQueue();renderPsCard();
-      document.getElementById('nummax-input').value=cfg.numMax;
+      const nminp=document.getElementById('nummax-input');
+      if(nminp)nminp.value=cfg.numMax;
       showToast(`✅ ${newSales.length}件 読み込み完了`);
     }catch(err){showToast('読込エラー: '+err.message);}
   };
@@ -1026,7 +1065,7 @@ function renderDisplay(){
     prevNums:prev,
     uncalledCount:uc.length,
     nextNum:uc.length?uc[0].num:null,
-    avgMin:calcAvgServiceMin()
+    avgMin:effectiveAvgMin()
   });
 }
 
@@ -1067,7 +1106,6 @@ function initDb(){
     const fbdb=firebase.database(app);
     _db=fbdb.ref('state');
     _fbSalesRef=fbdb.ref('sales');
-    _fbCfgRef=fbdb.ref('cfg');
     _fbCounterRef=fbdb.ref('counter');
 
     if(isDisplayMode()){
@@ -1085,25 +1123,17 @@ function initDb(){
       });
     }else{
       // スタッフ画面：sales・cfg をリアルタイム同期
+      // 自分が書いたエコーも含め「中身が変わった時だけ」適用する
       _fbSalesRef.on('value',snap=>{
-        if(Date.now()-_fbWriteTs<600)return; // 自分の書き込みエコーを無視
         const d=snap.val();
         if(d===null)return;
         const arr=Object.values(d).sort((a,b)=>(b.ts||0)-(a.ts||0));
+        // 内容が変わっていなければ再描画しない（自分の書き込みエコー対策）
+        if(JSON.stringify(arr)===JSON.stringify(sales))return;
         sales=arr;
         try{localStorage.setItem('cb_s',JSON.stringify(sales));}catch(_){}
         renderQueue();renderPsCard();
         syncDisplayState();
-      });
-      _fbCfgRef.on('value',snap=>{
-        if(Date.now()-_fbWriteTs<600)return;
-        const d=snap.val();
-        if(d===null)return;
-        Object.assign(cfg,d);
-        try{localStorage.setItem('cb_cfg',JSON.stringify(cfg));}catch(_){}
-        const el=document.getElementById('nummax-input');
-        if(el)el.value=cfg.numMax;
-        renderPsCard();renderCart();
       });
     }
   }catch(e){console.error('Firebase init error',e);}
