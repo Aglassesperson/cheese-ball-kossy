@@ -1,0 +1,1091 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>チーズボール販売管理</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap">
+<style>
+:root{
+  --bg:#F6F3EE;--bg-card:#FFFFFF;--bg-muted:#EDEAD4;--border:#DDD9CE;
+  --fg:#181410;--fg-2:#7A736A;
+  --accent:#E6B400;--acc-lt:#FFF7D6;--acc-fg:#3A2C00;
+  --warn:#D44820;--ps:#7B4FD0;--ps-lt:#F0EAFF;
+  --r:14px;--rsm:9px;
+}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#19150E;--bg-card:#231E15;--bg-muted:#2D2820;--border:#3D3830;
+  --fg:#F4EFE4;--fg-2:#A09880;
+  --accent:#F0C000;--acc-lt:#2E2700;--acc-fg:#2A1E00;
+  --warn:#FF6030;--ps:#9B6FFF;--ps-lt:#1E1340;
+  color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#19150E;--bg-card:#231E15;--bg-muted:#2D2820;--border:#3D3830;
+  --fg:#F4EFE4;--fg-2:#A09880;
+  --accent:#F0C000;--acc-lt:#2E2700;--acc-fg:#2A1E00;
+  --warn:#FF6030;--ps:#9B6FFF;--ps-lt:#1E1340;
+  color-scheme:dark;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:'Noto Sans JP',system-ui,sans-serif;
+  background:var(--bg);color:var(--fg);
+  display:flex;flex-direction:column;
+  min-height:100dvh;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:0;
+}
+.app-hd{
+  background:var(--fg);color:var(--bg);text-align:center;padding:10px 16px;
+  font-weight:900;font-size:14px;letter-spacing:.1em;
+  margin-left:max(-16px,calc(0px - env(safe-area-inset-left,0px)));
+  margin-right:max(-16px,calc(0px - env(safe-area-inset-right,0px)));
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+}
+.app-hd em{color:var(--accent);font-style:normal}
+.nav{
+  position:sticky;top:env(safe-area-inset-top,0px);z-index:10;
+  background:var(--bg-card);border-bottom:1px solid var(--border);display:flex;
+  margin-left:max(-16px,calc(0px - env(safe-area-inset-left,0px)));
+  margin-right:max(-16px,calc(0px - env(safe-area-inset-right,0px)));
+  padding-left:max(0px,env(safe-area-inset-left,0px));
+  padding-right:max(0px,env(safe-area-inset-right,0px));
+}
+.nav-tab{
+  flex:1;padding:11px 6px 9px;font-size:13px;font-weight:700;
+  cursor:pointer;border:none;background:none;color:var(--fg-2);
+  border-bottom:3px solid transparent;margin-bottom:-1px;
+  font-family:'Noto Sans JP',sans-serif;
+}
+.nav-tab.on{color:var(--fg);border-bottom-color:var(--accent)}
+.page{display:none;flex-direction:column;gap:11px;padding-block:13px}
+.page.on{display:flex}
+#page-sell.on{flex-direction:row;gap:0;padding:0;flex:1;min-height:0;overflow:hidden}
+#page-settings.on{display:block;padding-block:13px}
+#page-settings>*+*{margin-top:11px}
+#page-settings .card{overflow:visible;min-height:60px}
+#page-settings .setting-row{min-height:48px}
+.sell-left{width:44%;flex-shrink:0;display:flex;flex-direction:column;overflow:hidden;padding:12px 7px 12px 0}
+.sell-right{flex:1;overflow-y:auto;padding:12px 0 12px 7px;display:flex;flex-direction:column;gap:10px}
+.sell-right .btn-row{margin-top:auto;padding-top:2px}
+.sec{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--fg-2)}
+
+/* Queue */
+.queue-panel{background:var(--fg);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:10px;flex:1;overflow:hidden;min-height:0}
+#queue-body{flex:1;overflow-y:auto;min-height:0}
+.queue-hdr{display:flex;align-items:center;gap:8px}
+.queue-hdr-title{font-size:11px;font-weight:700;letter-spacing:.09em;color:rgba(255,255,255,.35);flex:1}
+.q-call-btn{
+  padding:9px 18px;border-radius:var(--rsm);border:none;background:var(--accent);color:var(--acc-fg);
+  font-size:14px;font-weight:900;cursor:pointer;font-family:'Noto Sans JP',sans-serif;white-space:nowrap;
+}
+.q-call-btn:active{transform:scale(.93)}
+.q-call-btn:disabled{opacity:.3;cursor:default;transform:none}
+.q-list{display:flex;flex-direction:column;gap:5px}
+.q-row{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:var(--rsm);padding:9px 12px;display:flex;align-items:center;gap:10px}
+.q-row:first-child{background:rgba(255,255,255,.11);border-color:rgba(255,255,255,.2)}
+.q-row-numwrap{display:flex;align-items:flex-end;gap:2px;flex-shrink:0;min-width:52px;justify-content:flex-end}
+.q-row-num{font-size:26px;font-weight:900;color:var(--accent);font-variant-numeric:tabular-nums;line-height:1}
+.q-row:first-child .q-row-num{font-size:32px}
+.q-row-ban{font-size:12px;font-weight:700;color:rgba(255,255,255,.4);padding-bottom:2px}
+.q-row-info{flex:1;min-width:0}
+.q-row-items{font-size:13px;font-weight:700;color:#fff;line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.q-row-meta{display:flex;gap:6px;align-items:center;margin-top:2px;flex-wrap:wrap}
+.q-row-wait{font-size:10px;font-weight:700;color:rgba(255,255,255,.32);font-variant-numeric:tabular-nums}
+.q-row-ps{font-size:10px;font-weight:700;color:var(--ps);background:rgba(155,111,255,.18);border-radius:4px;padding:1px 5px}
+.queue-empty{text-align:center;padding:14px 0 4px;font-size:13px;color:rgba(255,255,255,.3)}
+.queue-empty{text-align:center;padding:14px 0 4px;font-size:13px;color:rgba(255,255,255,.3)}
+.q-now-called{background:rgba(240,192,0,.08);border:1px solid rgba(240,192,0,.22);border-radius:var(--rsm);padding:9px 13px;display:flex;flex-direction:column;gap:7px}
+.q-now-label{font-size:9px;font-weight:700;letter-spacing:.12em;color:rgba(255,255,255,.4);text-transform:uppercase}
+.q-now-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.q-now-detail{font-size:11px;font-weight:700;color:rgba(255,255,255,.65);flex:1;min-width:0;line-height:1.4}
+.q-now-val{font-size:30px;font-weight:900;color:var(--accent);font-variant-numeric:tabular-nums;line-height:1;flex:1}
+.q-now-ban{font-size:12px;font-weight:700;color:rgba(255,255,255,.35)}
+.q-recv-btn{font-size:10px;font-weight:700;padding:4px 9px;border-radius:6px;background:rgba(0,210,100,.1);border:1px solid rgba(0,210,100,.22);color:rgba(60,220,120,.75);cursor:pointer;white-space:nowrap;transition:background .15s;font-family:inherit}
+.q-recv-btn:hover{background:rgba(0,210,100,.22)}
+.qc-wait{font-size:10px;font-weight:700;color:rgba(255,255,255,.32);margin-top:3px;font-variant-numeric:tabular-nums}
+.qcs-wait{font-size:9px;color:rgba(255,255,255,.28);font-weight:700;margin-top:2px;font-variant-numeric:tabular-nums}
+.num-warn{text-align:center;font-size:11px;font-weight:700;color:var(--accent);background:rgba(230,180,0,.12);border-radius:6px;padding:5px 10px}
+
+/* PS card */
+.ps-card{
+  background:var(--ps-lt);border:1.5px solid var(--ps);border-radius:var(--r);
+  padding:12px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+}
+.ps-card-info{flex:1;min-width:90px}
+.ps-card-label{font-size:10px;font-weight:700;color:var(--ps);letter-spacing:.07em;text-transform:uppercase}
+.ps-card-remain{font-size:26px;font-weight:900;color:var(--ps);font-variant-numeric:tabular-nums;line-height:1.1}
+.ps-card-remain small{font-size:14px;font-weight:600}
+.ps-card-sub{font-size:11px;color:var(--ps);opacity:.65;margin-top:1px;font-variant-numeric:tabular-nums}
+.ps-card-actions{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.ps-ctrl{display:flex;align-items:center;gap:5px}
+.ps-ctrl-lbl{font-size:10px;color:var(--ps);font-weight:700;white-space:nowrap}
+.ps-btn{width:26px;height:26px;border-radius:50%;border:1.5px solid var(--ps);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;color:var(--ps);line-height:1}
+.ps-btn:disabled{opacity:.3;cursor:default}
+.ps-btn-n{font-size:16px;font-weight:900;min-width:26px;text-align:center;color:var(--ps);font-variant-numeric:tabular-nums}
+.ps-issued-input{width:58px;padding:4px 6px;border:1.5px solid var(--ps);border-radius:var(--rsm);text-align:center;font-size:16px;font-weight:900;font-family:'Noto Sans JP',sans-serif;background:var(--ps-lt);color:var(--ps);font-variant-numeric:tabular-nums}
+.ps-issued-input:focus{outline:none;border-width:2px}
+.ps-refund{padding:7px 13px;border-radius:var(--rsm);border:1.5px solid var(--ps);background:transparent;color:var(--ps);font-size:12px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;white-space:nowrap}
+.ps-refund:disabled{opacity:.3;cursor:default}
+
+/* Products */
+.prod-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.prod-btn{
+  background:var(--bg-card);border:2px solid var(--border);border-radius:var(--r);
+  padding:14px 10px 12px;cursor:pointer;text-align:center;font-family:'Noto Sans JP',sans-serif;
+  position:relative;transition:border-color .1s,transform .08s,box-shadow .1s;
+  -webkit-tap-highlight-color:transparent;user-select:none;
+}
+.prod-btn:hover{border-color:var(--accent);box-shadow:0 3px 12px rgba(230,180,0,.18)}
+.prod-btn:active{transform:scale(.95)}
+.prod-dot{width:9px;height:9px;border-radius:50%;position:absolute;top:9px;right:9px}
+.prod-name{font-size:15px;font-weight:700;margin-bottom:4px}
+.prod-price{font-size:24px;font-weight:900;color:var(--accent);font-variant-numeric:tabular-nums;line-height:1}
+.prod-price small{font-size:11px;font-weight:400;color:var(--fg-2)}
+
+/* Cart */
+.card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.card-hd{padding:8px 13px;font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--fg-2);background:var(--bg-muted);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.order-badge{font-size:15px;font-weight:900;color:var(--accent);text-transform:none;letter-spacing:0}
+.cart-empty{padding:18px 13px;text-align:center;color:var(--fg-2);font-size:13px}
+.cart-row{display:flex;align-items:center;padding:8px 13px;gap:8px;border-bottom:1px solid var(--border)}
+.cart-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.cart-name{font-size:14px;font-weight:600;flex:1;min-width:0}
+.cart-qty{display:flex;align-items:center;gap:6px}
+.qty-btn{width:25px;height:25px;border-radius:50%;border:1.5px solid var(--border);background:var(--bg-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--fg);line-height:1}
+.qty-btn:hover{border-color:var(--accent)}
+.qty-n{font-size:14px;font-weight:700;min-width:18px;text-align:center;font-variant-numeric:tabular-nums}
+.cart-sub{font-size:13px;font-weight:700;min-width:52px;text-align:right;font-variant-numeric:tabular-nums}
+.ps-cart-row{display:flex;align-items:center;padding:9px 13px;gap:8px;background:var(--ps-lt);border-bottom:1px solid var(--border)}
+.ps-cart-lbl{font-size:13px;font-weight:700;color:var(--ps);flex:1}
+.ps-cart-disc{font-size:12px;color:var(--ps);font-weight:700;font-variant-numeric:tabular-nums}
+.ps-stepper{display:flex;align-items:center;gap:6px}
+.ps-s-btn{width:24px;height:24px;border-radius:50%;border:1.5px solid var(--ps);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;color:var(--ps);line-height:1}
+.ps-s-btn:disabled{opacity:.3;cursor:default}
+.ps-s-n{font-size:15px;font-weight:900;min-width:20px;text-align:center;color:var(--ps);font-variant-numeric:tabular-nums}
+.cart-foot{padding:11px 13px;border-top:2px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--bg-muted)}
+.cart-foot-lbl{font-weight:700;font-size:13px}
+.cart-total{font-weight:900;font-size:25px;color:var(--accent);font-variant-numeric:tabular-nums}
+
+/* Buttons */
+.btn-row{display:flex;gap:8px}
+.btn{flex:1;padding:13px;border-radius:var(--rsm);border:none;font-size:15px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;transition:opacity .1s,transform .08s;user-select:none;-webkit-tap-highlight-color:transparent}
+.btn:active:not(:disabled){transform:scale(.97)}
+.btn-primary{background:var(--accent);color:var(--acc-fg)}
+.btn-primary:disabled{opacity:.35;cursor:default}
+.btn-ghost{background:var(--bg-muted);color:var(--fg-2);border:1px solid var(--border)}
+.btn-danger{background:var(--bg-muted);color:var(--warn);border:1px solid var(--warn)}
+
+/* Display mode */
+#page-display{
+  position:fixed;inset:0;background:#080604;z-index:200;
+  display:none;flex-direction:column;align-items:center;justify-content:center;gap:0;
+  font-family:'Noto Sans JP',sans-serif;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+}
+#page-display.on{display:flex}
+.disp-brand{font-size:13px;font-weight:700;letter-spacing:.2em;color:rgba(255,255,255,.15);margin-bottom:18px}
+.disp-call-label{font-size:clamp(11px,2vw,15px);font-weight:700;letter-spacing:.22em;color:rgba(255,255,255,.28);text-transform:uppercase;margin-bottom:8px}
+.disp-nums-wrap{display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-end;gap:clamp(8px,3vw,28px)}
+.disp-numcard{display:flex;align-items:flex-end;gap:4px}
+.disp-num{
+  font-weight:900;color:#F0C000;line-height:1;
+  font-variant-numeric:tabular-nums;letter-spacing:-.02em;
+  text-shadow:0 0 80px rgba(240,192,0,.25);
+  transition:font-size .2s;
+}
+@keyframes callIn{from{opacity:0;transform:scale(.72) translateY(16px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.disp-num.fresh{animation:callIn .42s cubic-bezier(.34,1.36,.64,1) forwards}
+.disp-ban{font-weight:700;color:rgba(255,255,255,.38);transition:font-size .2s}
+.disp-empty{font-size:clamp(14px,3.5vw,24px);font-weight:700;color:rgba(255,255,255,.18);letter-spacing:.1em}
+.disp-recent-wrap{margin-top:24px;text-align:center}
+.disp-recent-label{font-size:10px;font-weight:700;letter-spacing:.15em;color:rgba(255,255,255,.18);margin-bottom:10px}
+.disp-recent-nums{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.disp-recent-num{
+  font-size:clamp(20px,4vw,28px);font-weight:900;color:rgba(255,255,255,.22);
+  font-variant-numeric:tabular-nums;background:rgba(255,255,255,.05);
+  padding:6px 14px;border-radius:10px;
+}
+.disp-exit{
+  position:fixed;top:max(14px,env(safe-area-inset-top,14px));
+  right:max(14px,env(safe-area-inset-right,14px));
+  background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);
+  color:rgba(255,255,255,.3);padding:7px 13px;border-radius:8px;
+  font-size:11px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;
+  transition:background .15s,color .15s;
+}
+.disp-exit:hover{background:rgba(255,255,255,.13);color:rgba(255,255,255,.55)}
+.disp-next-wrap{margin-top:22px;text-align:center}
+.disp-next-label{font-size:clamp(10px,1.8vw,14px);font-weight:700;letter-spacing:.18em;color:rgba(255,255,255,.22);margin-bottom:4px}
+.disp-next-num{font-size:clamp(28px,6vw,52px);font-weight:900;color:rgba(255,255,255,.45);font-variant-numeric:tabular-nums}
+.disp-wait-info{margin-top:16px;text-align:center;font-size:clamp(12px,2.2vw,18px);font-weight:600;color:rgba(255,255,255,.28);letter-spacing:.06em}
+.disp-wait-info span{color:rgba(240,192,0,.6)}
+.disp-status{
+  position:fixed;bottom:max(18px,env(safe-area-inset-bottom,18px));
+  left:50%;transform:translateX(-50%);
+  font-size:10px;color:rgba(255,255,255,.18);letter-spacing:.05em;white-space:nowrap;
+}
+
+/* Stats */
+.kpi-row{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.kpi{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r);padding:13px}
+.kpi-lbl{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--fg-2);margin-bottom:5px}
+.kpi-val{font-size:26px;font-weight:900;font-variant-numeric:tabular-nums;line-height:1}
+.kpi-sub{font-size:11px;color:var(--fg-2);margin-top:3px;font-variant-numeric:tabular-nums}
+.kpi-bk{font-size:10px;color:var(--fg-2);margin-top:4px;font-variant-numeric:tabular-nums;line-height:1.7}
+.kpi-bk span{color:var(--ps);font-weight:700}
+.flavor-row{display:flex;align-items:center;padding:10px 13px;gap:9px;border-bottom:1px solid var(--border)}
+.flavor-row:last-child{border-bottom:none}
+.fl-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.fl-name{flex:1;font-weight:600;font-size:13px}
+.fl-bar-wrap{flex:0 0 44px;height:5px;background:var(--bg-muted);border-radius:3px;overflow:hidden}
+.fl-bar{height:100%;border-radius:3px}
+.fl-nums{text-align:right;min-width:68px}
+.fl-cnt{font-size:11px;color:var(--fg-2);font-variant-numeric:tabular-nums}
+.fl-amt{font-size:13px;font-weight:700;font-variant-numeric:tabular-nums}
+.hist-wrap{max-height:190px;overflow-y:auto}
+.hist-row{display:flex;align-items:flex-start;padding:7px 13px;gap:5px;font-size:12px;border-bottom:1px solid var(--border)}
+.hist-row:last-child{border-bottom:none}
+.hist-num{font-weight:900;color:var(--accent);min-width:28px;font-variant-numeric:tabular-nums;flex-shrink:0}
+.hist-ps{font-size:9px;background:var(--ps-lt);color:var(--ps);border-radius:3px;padding:1px 4px;font-weight:700;flex-shrink:0;align-self:center}
+.hist-time{color:var(--fg-2);white-space:nowrap;min-width:36px;font-variant-numeric:tabular-nums;flex-shrink:0}
+.hist-desc{flex:1;min-width:0;line-height:1.5}
+.hist-amt{font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums}
+.hist-empty{padding:18px 13px;text-align:center;color:var(--fg-2);font-size:13px}
+
+/* Settings */
+.setting-row{display:flex;align-items:center;padding:12px 13px;gap:10px;border-bottom:1px solid var(--border)}
+.setting-row:last-child{border-bottom:none}
+.setting-info{flex:1;min-width:0}
+.setting-name{font-size:14px;font-weight:700}
+.setting-desc{font-size:12px;color:var(--fg-2);margin-top:2px}
+.setting-input{width:72px;padding:7px 4px;border:2px solid var(--border);border-radius:var(--rsm);text-align:center;font-size:16px;font-weight:700;font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--fg);font-variant-numeric:tabular-nums}
+.setting-input:focus{outline:none;border-color:var(--accent)}
+.action-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r);padding:13px;display:flex;flex-direction:column;gap:9px}
+.action-title{font-size:12px;font-weight:700;color:var(--fg-2)}
+.xl-note{font-size:11px;color:var(--fg-2);line-height:1.5}
+
+/* Overlay */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:50;align-items:flex-end;padding:16px max(16px,env(safe-area-inset-right,0px)) max(20px,env(safe-area-inset-bottom,20px)) max(16px,env(safe-area-inset-left,0px))}
+.overlay.on{display:flex}
+.overlay-box{background:var(--bg-card);border-radius:var(--r);width:100%;max-width:420px;margin:0 auto;overflow:hidden}
+.overlay-body{padding:18px 17px 13px}
+.overlay-title{font-size:18px;font-weight:900;margin-bottom:3px}
+.overlay-meta{font-size:13px;color:var(--fg-2);margin-bottom:11px;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.ov-ps-badge{background:var(--ps-lt);color:var(--ps);border-radius:5px;padding:2px 7px;font-size:11px;font-weight:700}
+.overlay-items{display:flex;flex-direction:column;gap:5px;margin-bottom:11px}
+.ov-item{display:flex;justify-content:space-between;font-size:13px}
+.ov-item-name{color:var(--fg-2)}
+.ov-item-price{font-variant-numeric:tabular-nums;font-weight:600}
+.ov-disc-row{display:flex;justify-content:space-between;font-size:13px;color:var(--ps);font-weight:700}
+.ov-divider{height:1px;background:var(--border);margin:9px 0}
+.ov-total{display:flex;justify-content:space-between;align-items:center}
+.ov-total-lbl{font-weight:700;font-size:14px}
+.ov-total-amt{font-weight:900;font-size:28px;color:var(--accent);font-variant-numeric:tabular-nums}
+.overlay-actions{display:flex;gap:9px;padding:0 17px 17px}
+
+/* Toast */
+.toast{position:fixed;bottom:max(22px,env(safe-area-inset-bottom,22px));left:50%;transform:translateX(-50%) translateY(60px);background:var(--fg);color:var(--bg);padding:11px 24px;border-radius:50px;font-weight:700;font-size:13px;white-space:nowrap;z-index:100;transition:transform .28s cubic-bezier(.34,1.4,.64,1),opacity .25s;opacity:0;pointer-events:none}
+.toast.on{transform:translateX(-50%) translateY(0);opacity:1}
+</style>
+
+</head>
+<body>
+<div class="app-hd">チーズ<em>ボール</em>　販売管理</div>
+<nav class="nav">
+  <button class="nav-tab on" onclick="goPage('sell')">販売</button>
+  <button class="nav-tab"    onclick="goPage('settings')">設定</button>
+</nav>
+
+<!-- SELL -->
+<div id="page-sell" class="page on">
+  <div class="sell-left">
+    <div class="queue-panel">
+      <div class="queue-hdr">
+        <div class="queue-hdr-title">呼出し待ち</div>
+        <button class="q-call-btn" id="q-call" onclick="callNext()" disabled>次を呼出す ▶</button>
+      </div>
+      <div id="q-now-called" class="q-now-called" hidden></div>
+      <div id="queue-body"></div>
+    </div>
+  </div>
+
+  <div class="sell-right">
+  <div class="ps-card">
+    <div style="font-size:20px;flex-shrink:0">🎟</div>
+    <div class="ps-card-info">
+      <div class="ps-card-label">前売り券　残り</div>
+      <div class="ps-card-remain" id="ps-remain">—<small>枚</small></div>
+      <div class="ps-card-sub" id="ps-sub"></div>
+    </div>
+    <div class="ps-card-actions">
+      <div class="ps-ctrl">
+        <span class="ps-ctrl-lbl">発行</span>
+        <input class="ps-issued-input" id="ps-iss-n" type="number" min="0" max="9999" oninput="setIssued(this.value)">
+        <span class="ps-ctrl-lbl">枚</span>
+      </div>
+      <div class="ps-ctrl">
+        <span class="ps-ctrl-lbl">返金</span>
+        <input class="ps-issued-input" id="ps-ref-n" type="number" min="0" max="9999" oninput="setRefund(this.value)">
+        <span class="ps-ctrl-lbl">枚</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="prod-grid" id="prod-grid"></div>
+
+  <div class="card">
+    <div class="card-hd">
+      <span>注文内容</span>
+      <span class="order-badge" id="order-badge"></span>
+    </div>
+    <div id="cart-rows"></div>
+    <div class="ps-cart-row" id="ps-cart-row" hidden>
+      <div style="font-size:16px">🎟</div>
+      <div class="ps-cart-lbl">前売り券</div>
+      <div class="ps-cart-disc" id="ps-disc"></div>
+      <div class="ps-stepper">
+        <button class="ps-s-btn" id="ps-minus" onclick="changePsTickets(-1)">−</button>
+        <div class="ps-s-n" id="ps-n">0</div>
+        <button class="ps-s-btn" id="ps-plus" onclick="changePsTickets(1)">＋</button>
+      </div>
+    </div>
+    <div class="cart-foot">
+      <div class="cart-foot-lbl">合計</div>
+      <div class="cart-total" id="cart-total">¥0</div>
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-ghost"   onclick="clearCart()">クリア</button>
+    <button class="btn btn-primary" id="checkout-btn" onclick="openCheckout()" disabled>会計する</button>
+  </div>
+  </div><!-- /sell-right -->
+</div>
+
+<!-- SETTINGS -->
+<div id="page-settings" class="page">
+  <div class="sec">番号設定</div>
+  <div class="card">
+    <div class="setting-row">
+      <div class="setting-info">
+        <div class="setting-name">番号の上限</div>
+        <div class="setting-desc">上限に達したら1番から再開します</div>
+      </div>
+      <input class="setting-input" type="number" min="10" max="999" id="nummax-input" oninput="setNumMax(this.value)">
+    </div>
+  </div>
+  <div class="sec">Excel連携</div>
+  <div class="action-card">
+    <div class="action-title" style="margin-bottom:6px">📊 Excelファイルと販売データを同期</div>
+    <div class="xl-note">① 販売データをExcelファイルでダウンロード</div>
+    <button class="btn btn-primary" style="margin-bottom:6px" onclick="exportExcel()">📥 Excelファイルをダウンロード</button>
+    <button class="btn btn-ghost" style="margin-bottom:10px" onclick="exportTSV()">📋 テキストでコピー（貼り付け用）</button>
+    <div class="xl-note">→ テキストコピーの場合はExcelの「販売入力」シートのA7セルに貼り付けてください</div>
+    <div style="height:12px"></div>
+    <div class="xl-note">② ExcelファイルをWebアプリへ読込</div>
+    <button class="btn btn-ghost" onclick="document.getElementById('xl-file').click()">📂 Excelファイルを読込</button>
+    <input type="file" id="xl-file" accept=".xlsx,.xls" hidden onchange="importExcel(this)">
+    <div class="xl-note" style="margin-top:6px">→ ファイルを選ぶと販売データと設定が自動で読み込まれます</div>
+  </div>
+  <div class="sec">お客様向け表示</div>
+  <div class="action-card">
+    <div class="action-title">📺 呼び出し番号の表示画面</div>
+    <div class="xl-note">「次を呼出す」ボタンを押すと番号が自動で更新されます。同じブラウザで別タブを開くか、URLをコピーして別デバイスで開いてください。</div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="openDisplayTab()">別タブで開く</button>
+      <button class="btn btn-ghost" onclick="copyDisplayUrl()">URLをコピー</button>
+    </div>
+  </div>
+  <div class="sec">データ管理</div>
+  <div class="action-card">
+    <div class="action-title">売上・呼出し履歴を削除します</div>
+    <div class="btn-row">
+      <button class="btn btn-danger" onclick="askReset('sales')">売上をリセット</button>
+      <button class="btn btn-danger" onclick="askReset('all')">全データリセット</button>
+    </div>
+  </div>
+</div>
+
+<!-- Customer display -->
+<div id="page-display">
+  <div class="disp-brand">🧀 チーズボール</div>
+  <div class="disp-call-label">ただいまお呼びしています</div>
+  <div id="disp-main">
+    <div class="disp-empty" id="disp-empty">しばらくお待ちください</div>
+    <div id="disp-nums-wrap" class="disp-nums-wrap" hidden></div>
+  </div>
+  <div id="disp-next-wrap" class="disp-next-wrap" hidden>
+    <div class="disp-next-label">NEXT</div>
+    <div class="disp-next-num" id="disp-next-num">—</div>
+  </div>
+  <div id="disp-wait-info" class="disp-wait-info" hidden></div>
+
+  <div class="disp-status" id="disp-status"></div>
+</div>
+
+<!-- Checkout overlay -->
+<div class="overlay" id="ov-checkout">
+  <div class="overlay-box">
+    <div class="overlay-body">
+      <div class="overlay-title">会計確認</div>
+      <div class="overlay-meta" id="ov-meta"></div>
+      <div class="overlay-items" id="ov-items"></div>
+      <div class="ov-divider"></div>
+      <div class="ov-total">
+        <div class="ov-total-lbl">合計金額</div>
+        <div class="ov-total-amt" id="ov-total"></div>
+      </div>
+    </div>
+    <div class="overlay-actions">
+      <button class="btn btn-ghost" onclick="closeOv('ov-checkout')">戻る</button>
+      <button class="btn btn-primary" onclick="completeSale()">会計完了</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm overlay -->
+<div class="overlay" id="ov-confirm">
+  <div class="overlay-box">
+    <div class="overlay-body">
+      <div class="overlay-title">確認</div>
+      <div id="confirm-msg" style="font-size:14px;color:var(--fg-2);line-height:1.65"></div>
+    </div>
+    <div class="overlay-actions">
+      <button class="btn btn-ghost" onclick="closeOv('ov-confirm')">キャンセル</button>
+      <button class="btn" style="flex:1;padding:13px;border-radius:var(--rsm);border:none;font-size:15px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;background:var(--warn);color:#fff" onclick="doConfirm()">実行する</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<!-- Firebase SDK (Realtime Database) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+// ════════════════════════════════════════════════════════════
+//  🔧 Firebase 設定（ここに貼り付けてください）
+//
+//  手順:
+//  1. https://console.firebase.google.com/ → プロジェクトを追加
+//  2. プロジェクト設定 → ウェブアプリを追加 → config をコピー
+//  3. Realtime Database → 作成 → ルールを以下に設定:
+//     { "rules": { ".read": true, ".write": true } }
+//  4. 下の {} の中身を置き換えて保存
+// ════════════════════════════════════════════════════════════
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyBs04J5hDti2ms356ldsOGO3A5PgV8pCek",
+  authDomain: "kys5i-d7d3c.firebaseapp.com",
+  databaseURL: "https://kys5i-d7d3c-default-rtdb.firebaseio.com",
+  projectId: "kys5i-d7d3c",
+  storageBucket: "kys5i-d7d3c.firebasestorage.app",
+  messagingSenderId: "406310385226",
+  appId: "1:406310385226:web:637477ea3e7cb22d8618b3",
+  measurementId: "G-09BX1B3CF1"
+};
+const PRODUCTS=[
+  {id:'plain',   name:'プレーン',  price:300,color:'#E6B400'},
+  {id:'norishio',name:'のり塩',   price:350,color:'#48A858'},
+  {id:'ketchup', name:'ケチャップ',price:350,color:'#E63C3C'},
+  {id:'mentai',  name:'明太マヨ', price:350,color:'#E060A0'},
+];
+const PS_PRICE=300;
+let cart={},sales=[],cfg={},psTickets=0,_cb=null,_db=null;
+
+function load(){
+  try{const s=localStorage.getItem('cb_s');if(s)sales=JSON.parse(s);}catch(e){sales=[]}
+  try{const v=localStorage.getItem('cb_cfg');if(v)cfg=JSON.parse(v);}catch(e){}
+  if(cfg.psIssued==null)   cfg.psIssued=30;
+  if(cfg.psRefunds==null)  cfg.psRefunds=0;
+  if(cfg.numMax==null)     cfg.numMax=99;
+  if(cfg.lastCalled==null) cfg.lastCalled=[];
+  let ch=false;
+  for(const s of sales){if(s.called==null){s.called=true;ch=true;}}
+  if(ch)saveS();
+}
+function saveS(){try{localStorage.setItem('cb_s',JSON.stringify(sales));}catch(e){}}
+function saveCfg(){try{localStorage.setItem('cb_cfg',JSON.stringify(cfg));}catch(e){}}
+
+function psUsed(){return sales.reduce((n,s)=>n+(s.psTickets||0),0);}
+function psRemain(){return Math.max(0,cfg.psIssued-psUsed()-cfg.psRefunds);}
+function psRevenue(){return(cfg.psIssued-cfg.psRefunds)*PS_PRICE;}
+function soldQty(id){return sales.reduce((n,s)=>{const it=s.items.find(i=>i.id===id);return n+(it?it.qty:0);},0);}
+function fmt(n){return '¥'+n.toLocaleString('ja-JP');}
+
+function nextNum(){
+  const mx=cfg.numMax||99,used=new Set(sales.map(s=>s.num));
+  if(!used.size)return 1;
+  const cur=Math.max(...used);
+  if(cur<mx)return cur+1;
+  for(let i=1;i<=mx;i++){if(!used.has(i))return i;}
+  return 1;
+}
+function maxNum(){return sales.length>0?Math.max(...sales.map(s=>s.num)):0;}
+function uncalled(){const u=sales.filter(s=>!s.called);return u.reverse();}
+function psDiscount(){
+  const flat=PRODUCTS.flatMap(p=>Array(cart[p.id]||0).fill(p.price)).sort((a,b)=>b-a);
+  return flat.slice(0,psTickets).reduce((s,p)=>s+p,0);
+}
+function cartTotal(){return Math.max(0,PRODUCTS.reduce((s,p)=>s+(cart[p.id]||0)*p.price,0)-psDiscount());}
+function totalCartItems(){return Object.values(cart).reduce((s,v)=>s+v,0);}
+
+const PAGES=['sell','settings'];
+function goPage(id){
+  PAGES.forEach(p=>document.getElementById('page-'+p).classList.toggle('on',p===id));
+  document.querySelectorAll('.nav-tab').forEach((t,i)=>t.classList.toggle('on',PAGES[i]===id));
+  if(id==='settings')document.getElementById('nummax-input').value=cfg.numMax;
+}
+
+function renderPsCard(){
+  const rem=psRemain();
+  document.getElementById('ps-remain').innerHTML=`${rem}<small>枚</small>`;
+  const parts=[`発行 ${cfg.psIssued}枚`,`使用 ${psUsed()}枚`];
+  if(cfg.psRefunds>0)parts.push(`返金 ${cfg.psRefunds}枚`);
+  document.getElementById('ps-sub').textContent=parts.join(' / ');
+  const inp=document.getElementById('ps-iss-n');
+  if(document.activeElement!==inp)inp.value=cfg.psIssued;
+  const ref=document.getElementById('ps-ref-n');
+  if(document.activeElement!==ref)ref.value=cfg.psRefunds;
+}
+
+function setIssued(v){const n=Math.max(0,parseInt(v)||0);cfg.psIssued=n;saveCfg();renderPsCard();renderCart();}
+function changeIssued(d){setIssued(cfg.psIssued+d);}
+function setRefund(v){const n=Math.max(0,parseInt(v)||0);cfg.psRefunds=n;saveCfg();renderPsCard();}
+function refundPs(){
+  if(psRemain()<=0){showToast('返金できる前売り券がありません');return;}
+  cfg.psRefunds++;saveCfg();renderPsCard();
+  showToast(`前売り券を1枚返金（−${fmt(PS_PRICE)}）`);
+}
+
+function calcAvgServiceMin(){
+  const withTs=[...sales].filter(s=>s.ts).sort((a,b)=>a.ts-b.ts);
+  if(withTs.length<2)return null;
+  const last=withTs.slice(-6);
+  let total=0,count=0;
+  for(let i=1;i<last.length;i++){const d=(last[i].ts-last[i-1].ts)/60000;if(d>0&&d<10){total+=d;count++;}}
+  return count>0?Math.max(1,Math.round(total/count)):null;
+}
+
+function pendingNums(){
+  return sales.filter(s=>s.called&&!s.received).sort((a,b)=>(a.ts||0)-(b.ts||0)).map(s=>s.num);
+}
+
+function syncDisplayState(){
+  const uc=uncalled();
+  const nextNum=uc.length?uc[0].num:null;
+  const avgMin=calcAvgServiceMin();
+  const uncalledCount=uc.length;
+  const pn=pendingNums();
+  if(_db)try{_db.set({lastCalled:cfg.lastCalled||[],ts:Date.now(),uncalledCount,nextNum,avgMin,pendingNums:pn});}catch(_){}
+}
+
+function markReceived(num){
+  const s=sales.find(x=>x.num===num);
+  if(s)s.received=true;
+  saveS();syncDisplayState();
+  renderQueue();renderDisplay();
+  showToast(`✅ ${num}番 受け取り済`);
+}
+
+function callNext(){
+  const q=uncalled();if(!q.length)return;
+  q[0].called=true;saveS();
+  cfg.lastCalled=[q[0].num,...(cfg.lastCalled||[]).filter(n=>n!==q[0].num)].slice(0,5);
+  saveCfg();
+  syncDisplayState();
+  renderQueue();renderDisplay();
+  showToast(`📢 ${q[0].num}番！`);
+}
+
+function timeAgo(ts){
+  if(!ts)return '';
+  const mins=Math.floor((Date.now()-ts)/60000);
+  if(mins<1)return '0分';
+  if(mins<60)return `${mins}分`;
+  const h=Math.floor(mins/60),m=mins%60;
+  return m>0?`${h}時間${m}分`:`${h}時間`;
+}
+
+function renderQueue(){
+  const waiting=uncalled();
+  document.getElementById('q-call').disabled=!waiting.length;
+  // 呼び出し中（呼んだが未受け取り）パネル
+  const nowEl=document.getElementById('q-now-called');
+  const calledPending=sales.filter(s=>s.called&&!s.received).sort((a,b)=>(b.ts||0)-(a.ts||0));
+  if(calledPending.length){
+    nowEl.hidden=false;
+    const fl2=s=>s.items.map(i=>`${i.name}${i.qty>1?' ×'+i.qty:''}`).join(' ／ ');
+    nowEl.innerHTML=`<div class="q-now-label">📢 呼び出し中</div>`+
+      calledPending.map(s=>`<div class="q-now-row">
+        <div class="q-now-val">${s.num}</div><div class="q-now-ban">番</div>
+        <div class="q-now-detail">${fl2(s)}${s.psTickets>0?` <span class="q-row-ps">🎟${s.psTickets>1?' ×'+s.psTickets:''}</span>`:''}</div>
+        <button class="q-recv-btn" onclick="markReceived(${s.num})">✓ 受け取り済</button>
+      </div>`).join('');
+  }else{nowEl.hidden=true;nowEl.innerHTML='';}
+  const body=document.getElementById('queue-body');
+  if(!waiting.length){
+    body.innerHTML=`<div class="queue-empty">${sales.length===0?'まだ会計がありません':'全員お呼び出し済みです ✓'}</div>`;
+    return;
+  }
+  const mx=cfg.numMax,cur2=maxNum(),nn=nextNum();
+  const near=cur2>=mx-2&&cur2<mx;
+  const fl=s=>s.items.map(i=>`${i.name}${i.qty>1?' ×'+i.qty:''}`).join(' ／ ');
+  let html='';
+  if(near)html+=`<div class="num-warn">⚠ まもなく上限（${mx}番）。次は ${nn}番 から</div>`;
+  html+=`<div class="q-list">`+waiting.map(s=>{
+    const w=timeAgo(s.ts);
+    return `<div class="q-row">
+      <div class="q-row-numwrap">
+        <div class="q-row-num">${s.num}</div><div class="q-row-ban">番</div>
+      </div>
+      <div class="q-row-info">
+        <div class="q-row-items">${fl(s)}</div>
+        <div class="q-row-meta">
+          ${s.psTickets>0?`<span class="q-row-ps">🎟 前売り${s.psTickets>1?' ×'+s.psTickets:''}</span>`:''}
+          ${w?`<span class="q-row-wait">${w}待ち</span>`:''}
+        </div>
+      </div>
+    </div>`;
+  }).join('')+`</div>`;
+  body.innerHTML=html;
+}
+
+function renderProducts(){
+  document.getElementById('prod-grid').innerHTML=PRODUCTS.map(p=>
+    `<button class="prod-btn" onclick="addItem('${p.id}')">
+      <span class="prod-dot" style="background:${p.color}"></span>
+      <div class="prod-name">${p.name}</div>
+      <div class="prod-price">${p.price}<small>円</small></div>
+    </button>`).join('');
+}
+
+function addItem(id){cart[id]=(cart[id]||0)+1;renderCart();}
+function changeQty(id,d){
+  const n=(cart[id]||0)+d;
+  if(n<=0){delete cart[id];}else{cart[id]=n;}
+  psTickets=Math.min(psTickets,totalCartItems());
+  renderCart();
+}
+function clearCart(){cart={};psTickets=0;renderCart();}
+function changePsTickets(d){
+  if(d>0){
+    if(psTickets>=totalCartItems())return;
+    if(psRemain()<=0){showToast('前売り券の残りがありません');return;}
+  }
+  psTickets=Math.max(0,Math.min(totalCartItems(),psTickets+d));
+  renderCart();
+}
+
+function renderCart(){
+  const items=PRODUCTS.filter(p=>(cart[p.id]||0)>0),n=totalCartItems();
+  document.getElementById('order-badge').textContent=n>0?`${nextNum()}番`:'';
+  const body=document.getElementById('cart-rows');
+  if(!items.length){
+    body.innerHTML='<div class="cart-empty">商品ボタンをタップして追加</div>';
+    document.getElementById('ps-cart-row').hidden=true;
+  }else{
+    body.innerHTML=items.map(p=>{const q=cart[p.id];return `<div class="cart-row">
+      <span class="cart-dot" style="background:${p.color}"></span>
+      <div class="cart-name">${p.name}</div>
+      <div class="cart-qty">
+        <button class="qty-btn" onclick="changeQty('${p.id}',-1)">−</button>
+        <span class="qty-n">${q}</span>
+        <button class="qty-btn" onclick="changeQty('${p.id}',1)">＋</button>
+      </div>
+      <div class="cart-sub">${fmt(q*p.price)}</div>
+    </div>`;}).join('');
+    document.getElementById('ps-cart-row').hidden=false;
+    const disc=psDiscount();
+    document.getElementById('ps-n').textContent=psTickets;
+    document.getElementById('ps-disc').textContent=disc>0?`−${fmt(disc)}`:'';
+    document.getElementById('ps-minus').disabled=psTickets<=0;
+    document.getElementById('ps-plus').disabled=psTickets>=n||psRemain()<=0;
+  }
+  document.getElementById('cart-total').textContent=fmt(cartTotal());
+  document.getElementById('checkout-btn').disabled=n===0;
+}
+
+function openCheckout(){
+  const num=nextNum(),items=PRODUCTS.filter(p=>(cart[p.id]||0)>0),disc=psDiscount();
+  document.getElementById('ov-meta').innerHTML=
+    `<span>整理番号：${num}番</span>${psTickets>0?`<span class="ov-ps-badge">🎟 前売り券 ×${psTickets}</span>`:''}`;
+  document.getElementById('ov-items').innerHTML=
+    items.map(p=>{const q=cart[p.id];return `<div class="ov-item">
+      <span class="ov-item-name">${p.name} × ${q}</span>
+      <span class="ov-item-price">${fmt(q*p.price)}</span></div>`;}).join('')+
+    (disc>0?`<div class="ov-disc-row"><span>🎟 前売り割引 ×${psTickets}</span><span>−${fmt(disc)}</span></div>`:'');
+  document.getElementById('ov-total').textContent=fmt(cartTotal());
+  document.getElementById('ov-checkout').classList.add('on');
+}
+
+function completeSale(){
+  const num=nextNum(),pst=psTickets,disc=psDiscount();
+  const items=PRODUCTS.filter(p=>(cart[p.id]||0)>0).map(p=>({id:p.id,name:p.name,qty:cart[p.id],price:p.price}));
+  const total=cartTotal(),now=new Date();
+  const time=`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  sales.unshift({num,time,items,total,psTickets:pst,discount:disc,called:false,received:false,ts:Date.now()});
+  saveS();closeOv('ov-checkout');cart={};psTickets=0;
+  syncDisplayState();
+  renderCart();renderQueue();renderPsCard();
+  showToast(`${num}番 会計完了！ ${fmt(total)}${pst>0?' 🎟':''}`);
+}
+
+function renderStats(){}
+
+function setNumMax(v){cfg.numMax=Math.max(10,Math.min(999,parseInt(v)||99));saveCfg();}
+
+function askReset(type){
+  document.getElementById('confirm-msg').innerHTML=type==='sales'
+    ?'売上履歴・呼出し状態をすべて削除します。<br>前売り券・設定はそのまま残ります。'
+    :'全データ（売上・前売り券・設定）を削除します。<br>この操作は取り消せません。';
+  _cb=()=>{
+    if(type==='sales'){sales=[];}
+    else{sales=[];cfg={psIssued:30,psRefunds:0,numMax:99};}
+    cart={};psTickets=0;saveS();saveCfg();
+    renderProducts();renderCart();renderQueue();renderPsCard();
+    showToast('リセットしました');
+  };
+  document.getElementById('ov-confirm').classList.add('on');
+}
+function doConfirm(){if(_cb)_cb();_cb=null;closeOv('ov-confirm');}
+function closeOv(id){document.getElementById(id).classList.remove('on');}
+let _tt;
+function showToast(msg){
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.classList.add('on');
+  clearTimeout(_tt);_tt=setTimeout(()=>el.classList.remove('on'),2800);
+}
+
+async function exportExcel(){
+  if(!sales.length){showToast('データがありません');return;}
+  if(typeof XLSX==='undefined'){showToast('ライブラリ読込中…しばらく待ってから再試行してください');return;}
+  const sorted=[...sales].sort((a,b)=>a.num-b.num);
+  const n=sorted.length; // データ行数 (2〜n+1行目)
+  // ── 販売明細シート ──
+  // 列: A=番号 B=時刻 C=プレーン D=のり塩 E=ケチャップ F=明太マヨ G=前売り券(使用) H=当日支払(円) I=呼出済
+  // K〜L列: 集計エリア（前売り券売上は発行時計上の固定値）
+  // A〜I列：データ本体（合計行なし）
+  const hdr=['番号','時刻','プレーン','のり塩','ケチャップ','明太マヨ','前売り券(使用)','当日支払(円)','呼出済'];
+  const rows=[hdr];
+  for(const s of sorted){
+    const qty={};for(const it of s.items)qty[it.id]=it.qty;
+    rows.push([s.num,s.time,qty['plain']||0,qty['norishio']||0,qty['ketchup']||0,qty['mentai']||0,
+      s.psTickets||0,s.total,s.called?'済':'未']);
+  }
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  // K〜L列：固定集計エリア（行を追加しても壊れない大きめ範囲）
+  const R=9999;
+  const psRev=psRevenue(); // 発行時売上（発行枚数−返金枚数）×PS_PRICE
+  const summary=[
+    ['【集計】',''],
+    ['注文件数',          {f:`COUNTA(A2:A${R})`}],
+    ['',''],
+    ['─ 商品別個数 ─',''],
+    ['プレーン（個）',    {f:`SUM(C2:C${R})`}],
+    ['のり塩（個）',     {f:`SUM(D2:D${R})`}],
+    ['ケチャップ（個）', {f:`SUM(E2:E${R})`}],
+    ['明太マヨ（個）',   {f:`SUM(F2:F${R})`}],
+    ['合計個数',          {f:`SUM(C2:F${R})`}],
+    ['',''],
+    ['─ 売上 ─',''],
+    ['前売り券発行枚数',  cfg.psIssued],
+    ['前売り券返金枚数',  cfg.psRefunds],
+    [`前売り券売上（¥${PS_PRICE}×発行枚数）`, cfg.psIssued*PS_PRICE],
+    [`前売り券返金（¥${PS_PRICE}×返金枚数）`, -(cfg.psRefunds*PS_PRICE)],
+    ['前売り券純売上（円）', psRev],
+    ['当日現金売上（円）',{f:`SUM(H2:H${R})`}],
+    ['合計売上（円）',    {f:`L16+L17`}],
+  ];
+  summary.forEach(([label,val],i)=>{
+    const kCell=XLSX.utils.encode_cell({c:10,r:i});
+    const lCell=XLSX.utils.encode_cell({c:11,r:i});
+    ws[kCell]={v:label,t:'s'};
+    if(val&&typeof val==='object'&&val.f){ws[lCell]={f:val.f,t:'n'};}
+    else if(typeof val==='number'){ws[lCell]={v:val,t:'n'};}
+    else if(val!=null&&val!==''){ws[lCell]={v:val,t:'s'};}
+    else{ws[lCell]={v:'',t:'s'};}
+  });
+  const maxR=Math.max(rows.length,summary.length);
+  ws['!ref']=`A1:L${maxR}`;
+  ws['!cols']=[{wch:6},{wch:7},{wch:9},{wch:9},{wch:10},{wch:10},{wch:12},{wch:11},{wch:7},{wch:2},{wch:28},{wch:12}];
+  // ── 集計シート（販売明細を参照）──
+  const ws2=XLSX.utils.aoa_to_sheet([
+    ['項目','値'],
+    ['プレーン（個）',                  {f:`SUM(販売明細!C2:C${R})`}],
+    ['のり塩（個）',                   {f:`SUM(販売明細!D2:D${R})`}],
+    ['ケチャップ（個）',               {f:`SUM(販売明細!E2:E${R})`}],
+    ['明太マヨ（個）',                 {f:`SUM(販売明細!F2:F${R})`}],
+    ['合計個数',                        {f:`SUM(B2:B5)`}],
+    [],
+    ['前売り券使用（枚）',             {f:`SUM(販売明細!G2:G${R})`}],
+    [],
+    [`前売り券売上（¥${PS_PRICE}×発行枚数）`, cfg.psIssued*PS_PRICE],
+    [`前売り券返金（¥${PS_PRICE}×返金枚数）`, -(cfg.psRefunds*PS_PRICE)],
+    ['前売り券純売上（円）', psRev],
+    ['当日現金売上（円）',             {f:`SUM(販売明細!H2:H${R})`}],
+    ['合計売上（円）',                  {f:`B12+B13`}],
+  ]);
+  ws2['!cols']=[{wch:28},{wch:12}];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'販売明細');
+  XLSX.utils.book_append_sheet(wb,ws2,'集計');
+  const buf=XLSX.write(wb,{type:'array',bookType:'xlsx'});
+  const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  const now=new Date();
+  const fname=`チーズボール販売_${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}.xlsx`;
+  // downloads capability (claude.ai 埋め込みビュー)
+  if(typeof window.claude!=='undefined'){
+    try{
+      const dl=await window.claude.use('downloads');
+      if(dl){
+        await dl.save({filename:fname,data:blob});
+        showToast('✅ ダウンロードしました');
+        return;
+      }
+    }catch(e){
+      if(e?.code==='declined'){showToast('キャンセルされました');return;}
+      // その他エラーはフォールバックへ
+    }
+  }
+  // フォールバック：blob URL（直接ブラウザタブで開いている場合）
+  try{
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=url;a.download=fname;
+    document.body.appendChild(a);a.click();document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url),10000);
+    showToast('✅ ダウンロードを開始しました');
+  }catch(e){
+    showToast('⚠ このビューではダウンロードできません。「テキストでコピー」をお使いください');
+  }
+}
+function exportTSV(){
+  if(!sales.length){showToast('データがありません');return;}
+  const hdr=['番号','時刻','プレーン','のり塩','ケチャップ','明太マヨ','前売り券','割引','合計','呼出済','備考'];
+  const sorted=[...sales].sort((a,b)=>a.num-b.num);
+  const rows=[hdr];
+  for(const s of sorted){
+    const qty={};for(const it of s.items)qty[it.id]=it.qty;
+    rows.push([s.num,s.time,qty['plain']||0,qty['norishio']||0,qty['ketchup']||0,qty['mentai']||0,
+      s.psTickets||0,s.discount||0,s.total,s.called?'済':'','']);
+  }
+  const tsv=rows.map(r=>r.join('\t')).join('\n');
+  navigator.clipboard.writeText(tsv)
+    .then(()=>showToast('✅ クリップボードにコピーしました（Excelに貼り付けてください）'))
+    .catch(()=>showCopyBox(tsv));
+}
+function showCopyBox(text){
+  const ov=document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px';
+  const box=document.createElement('div');
+  box.style.cssText='background:var(--bg-card);border-radius:14px;padding:16px;width:100%;max-width:420px;';
+  const ta=document.createElement('textarea');
+  ta.value=text;ta.readOnly=true;
+  ta.style.cssText='width:100%;height:120px;font-size:10px;border:1px solid var(--border);border-radius:6px;padding:8px;background:var(--bg);color:var(--fg);resize:none;margin:8px 0;font-family:monospace';
+  box.innerHTML='<div style="font-weight:700;margin-bottom:6px">テキストを全選択してコピーしてください</div>';
+  box.appendChild(ta);
+  const btn=document.createElement('button');
+  btn.textContent='閉じる';btn.onclick=()=>ov.remove();
+  btn.style.cssText='width:100%;padding:10px;border-radius:8px;border:none;background:var(--fg);color:var(--bg);font-weight:700;cursor:pointer;font-family:inherit';
+  box.appendChild(btn);ov.appendChild(box);
+  document.body.appendChild(ov);ta.select();
+}
+function importExcel(input){
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      if(typeof XLSX==='undefined'){showToast('ライブラリ読込中…しばらく待ってから再試行してください');return;}
+      const wb=XLSX.read(e.target.result,{type:'array'});
+      // Load settings
+      const wsCfg=wb.Sheets['設定'];
+      if(wsCfg){
+        const cd=XLSX.utils.sheet_to_json(wsCfg,{header:1,defval:''});
+        const tryNum=(r,c,min)=>{const v=parseInt(cd[r]&&cd[r][c]);return(!isNaN(v)&&v>=min)?v:null;};
+        const pi=tryNum(3,1,0),pr=tryNum(4,1,0),nm=tryNum(5,1,10);
+        if(pi!=null)cfg.psIssued=pi;
+        if(pr!=null)cfg.psRefunds=pr;
+        if(nm!=null)cfg.numMax=nm;
+        saveCfg();
+      }
+      // Load sales
+      const ws=wb.Sheets['販売入力'];
+      if(!ws){showToast('「販売入力」シートが見つかりません');return;}
+      const data=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+      let start=0;
+      for(let i=0;i<data.length;i++){const v=data[i][0];if(typeof v==='number'||(String(v).trim()!==''&&!isNaN(parseInt(v))&&parseInt(v)>0)){start=i;break;}}
+      const newSales=[];
+      for(let i=start;i<data.length;i++){
+        const row=data[i];
+        const num=parseInt(row[0]);
+        if(isNaN(num)||num<=0)continue;
+        const pl=Math.max(0,parseInt(row[2])||0),no=Math.max(0,parseInt(row[3])||0),
+              ke=Math.max(0,parseInt(row[4])||0),me=Math.max(0,parseInt(row[5])||0);
+        if(pl+no+ke+me===0)continue;
+        const pst=Math.max(0,parseInt(row[6])||0);
+        const disc=Math.max(0,parseInt(row[7])||Math.min(pst,no+ke+me)*350+Math.max(0,pst-no-ke-me)*300);
+        const total=pl*300+no*350+ke*350+me*350-disc;
+        const items=[];
+        if(pl>0)items.push({id:'plain',name:'プレーン',qty:pl,price:300});
+        if(no>0)items.push({id:'norishio',name:'のり塩',qty:no,price:350});
+        if(ke>0)items.push({id:'ketchup',name:'ケチャップ',qty:ke,price:350});
+        if(me>0)items.push({id:'mentai',name:'明太マヨ',qty:me,price:350});
+        const called=String(row[9]).trim()==='済';
+        newSales.push({num,time:String(row[1]||''),items,total,psTickets:pst,discount:disc,called});
+      }
+      if(!newSales.length){showToast('読み込めるデータがありませんでした');return;}
+      sales=newSales.sort((a,b)=>b.num-a.num);
+      saveS();renderCart();renderQueue();renderPsCard();
+      document.getElementById('nummax-input').value=cfg.numMax;
+      showToast(`✅ ${newSales.length}件 読み込み完了`);
+    }catch(err){showToast('読込エラー: '+err.message);}
+  };
+  reader.readAsArrayBuffer(file);
+  input.value='';
+}
+
+// ─── Display mode ───────────────────────────────────────────────
+function isDisplayMode(){return location.hash==='#display';}
+
+function _applyDisplayState(pn, extra={}){
+  // pn = pendingNums array (called & not received)
+  const emptyEl=document.getElementById('disp-empty');
+  const numsWrap=document.getElementById('disp-nums-wrap');
+  if(!pn||!pn.length){
+    emptyEl.hidden=false;numsWrap.hidden=true;
+  }else{
+    emptyEl.hidden=true;numsWrap.hidden=false;
+    const prevNums=extra.prevNums||[];
+    // font size: scale down with more numbers
+    const n=pn.length;
+    const numFs=n===1?'min(42vw,240px)':n===2?'min(22vw,160px)':'min(16vw,110px)';
+    const banFs=n===1?'min(8vw,52px)':n===2?'min(5vw,32px)':'min(4vw,24px)';
+    // remember which were already shown (no re-animation)
+    const existing=new Set([...numsWrap.querySelectorAll('.disp-num')].map(e=>e.dataset.num));
+    numsWrap.innerHTML=pn.map(num=>{
+      const isNew=!existing.has(String(num));
+      return `<div class="disp-numcard">
+        <div class="disp-num${isNew?' fresh':''}" data-num="${num}" style="font-size:${numFs}">${num}</div>
+        <div class="disp-ban" style="font-size:${banFs};padding-bottom:${n===1?'min(2vw,12px)':'4px'}">番</div>
+      </div>`;}).join('');
+
+  }
+  // 次の番号
+  const nextWrap=document.getElementById('disp-next-wrap');
+  const nextNumEl=document.getElementById('disp-next-num');
+  if(nextWrap&&extra.nextNum!=null){nextWrap.hidden=false;nextNumEl.textContent=extra.nextNum;}
+  else if(nextWrap){nextWrap.hidden=true;}
+  // 予想待ち時間
+  const waitEl=document.getElementById('disp-wait-info');
+  if(waitEl){
+    const count=extra.uncalledCount;
+    if(count>0){
+      let txt=`<span>${count}組</span>が待ち中`;
+      if(extra.avgMin!=null){txt+=` ／ 予想 約<span>${count*extra.avgMin}分</span>`;}
+      waitEl.innerHTML=txt;waitEl.hidden=false;
+    }else{waitEl.hidden=true;}
+  }
+}
+
+function renderDisplay(){
+  if(!document.getElementById('page-display').classList.contains('on'))return;
+  const uc=uncalled();
+  const pn=pendingNums();
+  const prev=(cfg.lastCalled||[]).filter(n=>!pn.includes(n)).slice(0,4);
+  _applyDisplayState(pn,{
+    prevNums:prev,
+    uncalledCount:uc.length,
+    nextNum:uc.length?uc[0].num:null,
+    avgMin:calcAvgServiceMin()
+  });
+}
+
+function showDisplay(){
+  // Hide nav + main pages; show display
+  document.querySelector('.app-hd').hidden=true;
+  document.querySelector('.nav').hidden=true;
+  document.getElementById('page-sell').classList.remove('on');
+  document.getElementById('page-settings').classList.remove('on');
+  document.getElementById('page-display').classList.add('on');
+  renderDisplay();
+}
+
+function exitDisplay(){
+  document.getElementById('page-display').classList.remove('on');
+  document.querySelector('.app-hd').hidden=false;
+  document.querySelector('.nav').hidden=false;
+  document.getElementById('page-sell').classList.add('on');
+  history.replaceState(null,'',location.pathname+location.search);
+}
+
+function openDisplayTab(){
+  const url=location.href.split('#')[0]+'#display';
+  window.open(url,'_blank');
+}
+
+function copyDisplayUrl(){
+  const url=location.href.split('#')[0]+'#display';
+  navigator.clipboard.writeText(url)
+    .then(()=>showToast('✅ URLをコピーしました'))
+    .catch(()=>showToast('コピー失敗。URLに #display を付けて開いてください'));
+}
+
+function initDb(){
+  if(!FIREBASE_CONFIG.apiKey)return; // 未設定
+  try{
+    const app=firebase.initializeApp(FIREBASE_CONFIG);
+    const fbdb=firebase.database(app);
+    const stateRef=fbdb.ref('state');
+    _db=stateRef; // write: _db.set(data)
+    if(isDisplayMode()){
+      const el=document.getElementById('disp-status');
+      if(el)el.textContent='同期中…';
+      stateRef.on('value',snap=>{
+        if(el)el.textContent='';
+        const d=snap.val()||{};
+        const lc=d.lastCalled||cfg.lastCalled||[];
+        cfg.lastCalled=lc;
+        const pn=d.pendingNums||[];
+        const prev=lc.filter(n=>!pn.includes(n)).slice(0,4);
+        _applyDisplayState(pn,{prevNums:prev,uncalledCount:d.uncalledCount||0,nextNum:d.nextNum??null,avgMin:d.avgMin??null});
+      });
+    }
+  }catch(e){console.error('Firebase init error',e);}
+}
+
+// ─── Boot ────────────────────────────────────────────────────────
+load();
+
+// Cross-tab storage events (same browser, different tabs)
+window.addEventListener('storage',e=>{
+  if(e.key==='cb_cfg'){
+    try{const v=JSON.parse(e.newValue||'{}');
+      if(v.lastCalled)cfg.lastCalled=v.lastCalled;
+    }catch(_){}
+  }
+  if(e.key==='cb_s'){
+    try{const s=JSON.parse(e.newValue||'[]');if(Array.isArray(s))sales=s;}catch(_){}
+    if(isDisplayMode()){renderDisplay();}else{renderQueue();}
+  }
+});
+
+if(isDisplayMode()){
+  showDisplay();
+  initDb();
+}else{
+  renderProducts();renderCart();renderQueue();renderPsCard();
+  initDb();
+}
+
+window.addEventListener('hashchange',()=>{
+  if(isDisplayMode()){showDisplay();initDb();}
+  else exitDisplay();
+});
+</script>
+
+</body>
+</html>
