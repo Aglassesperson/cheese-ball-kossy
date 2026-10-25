@@ -387,7 +387,10 @@ body{
         <div class="setting-name">予想待ち時間（分/人）</div>
         <div class="setting-desc">0にすると実績から自動計算します</div>
       </div>
-      <input class="setting-input" type="number" min="0" max="60" id="waitmin-input" oninput="setWaitMin(this.value)">
+      <div style="display:flex;gap:6px;align-items:center">
+        <input class="setting-input" type="number" min="0" max="60" id="waitmin-input" disabled style="opacity:.5" onchange="confirmWaitMin(this.value)">
+        <button id="waitmin-lock-btn" class="btn btn-ghost" style="padding:6px 10px;font-size:13px;white-space:nowrap" onclick="unlockWaitMin()">変更</button>
+      </div>
     </div>
   </div>
   <div class="sec">Excel連携</div>
@@ -490,7 +493,7 @@ body{
 //  4. 下の {} の中身を置き換えて保存
 // ════════════════════════════════════════════════════════════
 const FIREBASE_CONFIG = {
- apiKey: "AIzaSyBs04J5hDti2ms356ldsOGO3A5PgV8pCek",
+  apiKey: "AIzaSyBs04J5hDti2ms356ldsOGO3A5PgV8pCek",
   authDomain: "kys5i-d7d3c.firebaseapp.com",
   databaseURL: "https://kys5i-d7d3c-default-rtdb.firebaseio.com",
   projectId: "kys5i-d7d3c",
@@ -563,7 +566,10 @@ function goPage(id){
     inp.value=cfg.numMax;inp.disabled=true;inp.style.opacity='.5';
     const btn=document.getElementById('nummax-lock-btn');
     btn.textContent='変更';btn.onclick=unlockNumMax;
-    document.getElementById('waitmin-input').value=cfg.waitMin||0;
+    const winp=document.getElementById('waitmin-input');
+    winp.value=cfg.waitMin||0;winp.disabled=true;winp.style.opacity='.5';
+    const wbtn=document.getElementById('waitmin-lock-btn');
+    wbtn.textContent='変更';wbtn.onclick=unlockWaitMin;
   }
 }
 
@@ -798,7 +804,21 @@ function confirmNumMax(v){
   btn.textContent='変更';btn.onclick=unlockNumMax;
   showToast('番号の上限を'+n+'に設定しました');
 }
-function setWaitMin(v){cfg.waitMin=Math.max(0,Math.min(60,parseInt(v)||0));saveCfg();syncDisplayState();}
+function unlockWaitMin(){
+  const inp=document.getElementById('waitmin-input');
+  const btn=document.getElementById('waitmin-lock-btn');
+  inp.disabled=false;inp.style.opacity='1';inp.focus();inp.select();
+  btn.textContent='確定';btn.onclick=()=>confirmWaitMin(inp.value);
+}
+function confirmWaitMin(v){
+  const n=Math.max(0,Math.min(60,parseInt(v)||0));
+  cfg.waitMin=n;saveCfg();syncDisplayState();
+  const inp=document.getElementById('waitmin-input');
+  const btn=document.getElementById('waitmin-lock-btn');
+  inp.value=n;inp.disabled=true;inp.style.opacity='.5';
+  btn.textContent='変更';btn.onclick=unlockWaitMin;
+  showToast(n===0?'待ち時間を自動計算に設定しました':'待ち時間を'+n+'分/人に設定しました');
+}
 
 function askReset(type){
   document.getElementById('confirm-msg').innerHTML=type==='sales'
