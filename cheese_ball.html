@@ -537,7 +537,7 @@ function saveCfg(){
 function psUsed(){return sales.reduce((n,s)=>n+(s.psTickets||0),0);}
 function psRemain(){return Math.max(0,cfg.psIssued-psUsed()-cfg.psRefunds);}
 function psRevenue(){return(cfg.psIssued-cfg.psRefunds)*PS_PRICE;}
-function soldQty(id){return sales.reduce((n,s)=>{const it=s.items.find(i=>i.id===id);return n+(it?it.qty:0);},0);}
+function soldQty(id){return sales.reduce((n,s)=>{const it=(s.items||[]).find(i=>i.id===id);return n+(it?it.qty:0);},0);}
 function fmt(n){return '¥'+n.toLocaleString('ja-JP');}
 
 function nextNum(){
@@ -656,7 +656,7 @@ function renderQueue(){
   const calledPending=sales.filter(s=>s.called&&!s.received).sort((a,b)=>(b.ts||0)-(a.ts||0));
   if(calledPending.length){
     nowEl.hidden=false;
-    const fl2=s=>s.items.map(i=>`${i.name}${i.qty>1?' ×'+i.qty:''}`).join(' ／ ');
+    const fl2=s=>(s.items||[]).map(i=>`${i.name}${i.qty>1?' ×'+i.qty:''}`).join(' ／ ');
     nowEl.innerHTML=`<div class="q-now-label">📢 呼び出し中</div>`+
       calledPending.map(s=>`<div class="q-now-row">
         <div class="q-now-val">${s.num}</div><div class="q-now-ban">番</div>
@@ -671,7 +671,7 @@ function renderQueue(){
   }
   const mx=cfg.numMax,cur2=maxNum(),nn=nextNum();
   const near=cur2>=mx-2&&cur2<mx;
-  const fl=s=>s.items.map(i=>`${i.name}${i.qty>1?' ×'+i.qty:''}`).join(' ／ ');
+  const fl=s=>(s.items||[]).map(i=>`${i.name}${i.qty>1?' ×'+i.qty:''}`).join(' ／ ');
   let html='';
   if(near)html+=`<div class="num-warn">⚠ まもなく上限（${mx}番）。次は ${nn}番 から</div>`;
   html+=`<div class="q-list">`+waiting.map(s=>{
@@ -1143,18 +1143,32 @@ function initDb(){
         _applyDisplayState(pn,{prevNums:prev,uncalledCount:d.uncalledCount||0,nextNum:d.nextNum??null,avgMin:d.avgMin??null});
       });
     }else{
-      // スタッフ画面：sales・cfg をリアルタイム同期
-      // 自分が書いたエコーも含め「中身が変わった時だけ」適用する
+      // スタッフ画面：sales をリアルタイム同期
       _fbSalesRef.on('value',snap=>{
         const d=snap.val();
-        if(d===null)return;
-        const arr=Object.values(d).sort((a,b)=>(b.ts||0)-(a.ts||0));
-        // 内容が変わっていなければ再描画しない（自分の書き込みエコー対策）
-        if(JSON.stringify(arr)===JSON.stringify(sales))return;
+        if(d===null){
+          // 全リセットされた場合
+          if(sales.length>0){sales=[];try{localStorage.setItem('cb_s','[]');}catch(_){}renderQueue();renderPsCard();syncDisplayState();}
+          return;
+        }
+        // Firebase は property をアルファベット順で返すため JSON 比較不可。
+        // 代わりに「num・called・received の組み合わせ」で差分を検出する
+        const arr=Object.values(d)
+          .filter(s=>s&&Array.isArray(s.items))  // 不正なレコードを除外
+          .sort((a,b)=>(b.ts||0)-(a.ts||0));
+        const key=a=>a.map(s=>`${s.num},${s.called?1:0},${s.received?1:0},${(s.items||[]).length}`).join('|');
+        if(key(arr)===key(sales))return; // 変化なし（自己エコー等）
         sales=arr;
         try{localStorage.setItem('cb_s',JSON.stringify(sales));}catch(_){}
-        renderQueue();renderPsCard();
+        // 描画エラーで syncDisplayState が止まらないよう個別にtry/catch
+        try{renderQueue();}catch(e){console.warn('renderQueue error',e);}
+        try{renderPsCard();}catch(e){console.warn('renderPsCard error',e);}
         syncDisplayState();
+      });
+      // /state を購読して lastCalled をスタッフ端末間で同期
+      _db.on('value',snap=>{
+        const d=snap.val()||{};
+        if(Array.isArray(d.lastCalled))cfg.lastCalled=d.lastCalled;
       });
     }
   }catch(e){console.error('Firebase init error',e);}
