@@ -33,7 +33,7 @@ body{
   font-family:'Noto Sans JP',system-ui,sans-serif;
   background:var(--bg);color:var(--fg);
   display:flex;flex-direction:column;
-  min-height:100dvh;
+  height:100dvh;overflow:hidden;
   padding-left:max(16px,env(safe-area-inset-left,0px));
   padding-right:max(16px,env(safe-area-inset-right,0px));
   padding-block:0;
@@ -48,7 +48,7 @@ body{
 }
 .app-hd em{color:var(--accent);font-style:normal}
 .nav{
-  position:sticky;top:env(safe-area-inset-top,0px);z-index:10;
+  position:relative;z-index:10;flex-shrink:0;
   background:var(--bg-card);border-bottom:1px solid var(--border);display:flex;
   margin-left:max(-16px,calc(0px - env(safe-area-inset-left,0px)));
   margin-right:max(-16px,calc(0px - env(safe-area-inset-right,0px)));
@@ -65,7 +65,7 @@ body{
 .page{display:none;flex-direction:column;gap:11px;padding-block:13px}
 .page.on{display:flex}
 #page-sell.on{flex-direction:row;gap:0;padding:0;flex:1;min-height:0;overflow:hidden}
-#page-settings.on{display:block;padding-block:13px}
+#page-settings.on{display:block;padding-block:13px;flex:1;min-height:0;overflow-y:auto}
 #page-settings>*+*{margin-top:11px}
 #page-settings .card{overflow:visible;min-height:60px}
 #page-settings .setting-row{min-height:48px}
@@ -545,8 +545,13 @@ function nextNum(){
   if(!used.size)return 1;
   const cur=Math.max(...used);
   if(cur<mx)return cur+1;
+  // 上限到達 → 1番から空き番号を探す
   for(let i=1;i<=mx;i++){if(!used.has(i))return i;}
-  return 1;
+  return null; // 全番号使用中（登録不可）
+}
+function allNumsFull(){
+  const mx=cfg.numMax||99,used=new Set(sales.map(s=>s.num));
+  return used.size>=mx;
 }
 function maxNum(){return sales.length>0?Math.max(...sales.map(s=>s.num)):0;}
 function uncalled(){const u=sales.filter(s=>!s.called);return u.reverse();}
@@ -585,11 +590,23 @@ function renderPsCard(){
   if(document.activeElement!==ref)ref.value=cfg.psRefunds;
 }
 
-function setIssued(v){const n=Math.max(0,parseInt(v)||0);cfg.psIssued=n;saveCfg();renderPsCard();renderCart();}
+function setIssued(v){
+  const n=Math.max(0,parseInt(v)||0);
+  // 発行枚数は「使用済み＋返金済み」の合計を下回れない
+  const minN=psUsed()+(cfg.psRefunds||0);
+  cfg.psIssued=Math.max(minN,n);
+  saveCfg();renderPsCard();renderCart();
+}
 function changeIssued(d){setIssued(cfg.psIssued+d);}
-function setRefund(v){const n=Math.max(0,parseInt(v)||0);cfg.psRefunds=n;saveCfg();renderPsCard();}
+function setRefund(v){
+  const n=Math.max(0,parseInt(v)||0);
+  // 返金は「発行数 − 使用数」を超えられない
+  cfg.psRefunds=Math.min(n,Math.max(0,cfg.psIssued-psUsed()));
+  saveCfg();renderPsCard();
+}
 function refundPs(){
-  if(psRemain()<=0){showToast('返金できる前売り券がありません');return;}
+  // 返金可能な上限 = 発行数 − 使用数（residualなので使用済みとは別枠）
+  if(cfg.psRefunds>=(cfg.psIssued-psUsed())){showToast('これ以上返金できません（発行数を超えます）');return;}
   cfg.psRefunds++;saveCfg();renderPsCard();
   showToast(`前売り券を1枚返金（−${fmt(PS_PRICE)}）`);
 }
@@ -670,10 +687,12 @@ function renderQueue(){
     return;
   }
   const mx=cfg.numMax,cur2=maxNum(),nn=nextNum();
-  const near=cur2>=mx-2&&cur2<mx;
+  const full=allNumsFull();
+  const near=!full&&cur2>=mx-2&&cur2<mx;
   const fl=s=>(s.items||[]).map(i=>`${i.name}${i.qty>1?' ×'+i.qty:''}`).join(' ／ ');
   let html='';
-  if(near)html+=`<div class="num-warn">⚠ まもなく上限（${mx}番）。次は ${nn}番 から</div>`;
+  if(full)html+=`<div class="num-warn">🚫 番号が全て使用中（上限 ${mx}番）。受取済みにしてから新規登録できます</div>`;
+  else if(near)html+=`<div class="num-warn">⚠ まもなく上限（${mx}番）。次は ${nn}番 から再開</div>`;
   html+=`<div class="q-list">`+waiting.map(s=>{
     const w=timeAgo(s.ts);
     return `<div class="q-row">
@@ -720,7 +739,9 @@ function changePsTickets(d){
 
 function renderCart(){
   const items=PRODUCTS.filter(p=>(cart[p.id]||0)>0),n=totalCartItems();
-  document.getElementById('order-badge').textContent=n>0?`${nextNum()}番`:'';
+  const full=allNumsFull();
+  const nn=nextNum();
+  document.getElementById('order-badge').textContent=n>0&&!full?`${nn}番`:(full?'満':'');
   const body=document.getElementById('cart-rows');
   if(!items.length){
     body.innerHTML='<div class="cart-empty">商品ボタンをタップして追加</div>';
@@ -744,10 +765,11 @@ function renderCart(){
     document.getElementById('ps-plus').disabled=psTickets>=n||psRemain()<=0;
   }
   document.getElementById('cart-total').textContent=fmt(cartTotal());
-  document.getElementById('checkout-btn').disabled=n===0;
+  document.getElementById('checkout-btn').disabled=n===0||full;
 }
 
 function openCheckout(){
+  if(allNumsFull()){showToast(`全番号使用中（上限 ${cfg.numMax||99}番）。受取済みにしてから登録してください`);return;}
   const num=nextNum(),items=PRODUCTS.filter(p=>(cart[p.id]||0)>0),disc=psDiscount();
   document.getElementById('ov-meta').innerHTML=
     `<span>整理番号：${num}番</span>${psTickets>0?`<span class="ov-ps-badge">🎟 前売り券 ×${psTickets}</span>`:''}`;
@@ -768,13 +790,19 @@ async function completeSale(){
       const mx=cfg.numMax||99;
       const result=await _fbCounterRef.transaction(cur=>{
         const used=new Set(sales.map(s=>s.num));
+        if(used.size>=mx)return; // abort: 全番号使用中
         let next=((cur||0)%mx)+1;
         // 使用済みならスキップ（最大mx回試す）
         for(let i=0;i<mx;i++){if(!used.has(next))break;next=next%mx+1;}
         return next;
       });
+      if(!result.committed){showToast(`全番号使用中（上限 ${mx}番）`);return;}
       num=result.snapshot.val();
-    }catch(e){num=nextNum();}
+    }catch(e){
+      const nn=nextNum();
+      if(nn===null){showToast(`全番号使用中（上限 ${cfg.numMax||99}番）`);return;}
+      num=nn;
+    }
   }else{num=nextNum();}
   const pst=psTickets,disc=psDiscount();
   const items=PRODUCTS.filter(p=>(cart[p.id]||0)>0).map(p=>({id:p.id,name:p.name,qty:cart[p.id],price:p.price}));
