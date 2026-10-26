@@ -98,7 +98,7 @@ body{
 .q-row-wait{font-size:10px;font-weight:700;color:rgba(255,255,255,.32);font-variant-numeric:tabular-nums}
 .q-row-ps{font-size:10px;font-weight:700;color:var(--ps);background:rgba(155,111,255,.18);border-radius:4px;padding:1px 5px}
 .queue-empty{text-align:center;padding:14px 0 4px;font-size:13px;color:rgba(255,255,255,.3)}
-.q-now-called{background:rgba(240,192,0,.08);border:1px solid rgba(240,192,0,.22);border-radius:var(--rsm);padding:9px 13px;display:flex;flex-direction:column;gap:7px}
+.q-now-called{background:rgba(240,192,0,.08);border:1px solid rgba(240,192,0,.22);border-radius:var(--rsm);padding:9px 13px;display:flex;flex-direction:column;gap:7px;flex-shrink:0;max-height:50%;overflow-y:auto}
 .q-now-label{font-size:9px;font-weight:700;letter-spacing:.12em;color:rgba(255,255,255,.4);text-transform:uppercase}
 .q-now-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .q-now-detail{font-size:11px;font-weight:700;color:rgba(255,255,255,.65);flex:1;min-width:0;line-height:1.4}
@@ -670,11 +670,12 @@ function renderQueue(){
   document.getElementById('q-call').disabled=!waiting.length;
   // 呼び出し中（呼んだが未受け取り）パネル
   const nowEl=document.getElementById('q-now-called');
-  const calledPending=sales.filter(s=>s.called&&!s.received).sort((a,b)=>(b.ts||0)-(a.ts||0));
+  // 長く待っている（若い）番号を上に。多いときは枠内をスクロール
+  const calledPending=sales.filter(s=>s.called&&!s.received).sort((a,b)=>(a.ts||0)-(b.ts||0));
   if(calledPending.length){
     nowEl.hidden=false;
     const fl2=s=>(s.items||[]).map(i=>`${i.name}${i.qty>1?' ×'+i.qty:''}`).join(' ／ ');
-    nowEl.innerHTML=`<div class="q-now-label">📢 呼び出し中</div>`+
+    nowEl.innerHTML=`<div class="q-now-label">📢 呼び出し中（${calledPending.length}組）</div>`+
       calledPending.map(s=>`<div class="q-now-row">
         <div class="q-now-val">${s.num}</div><div class="q-now-ban">番</div>
         <div class="q-now-detail">${fl2(s)}${s.psTickets>0?` <span class="q-row-ps">🎟${s.psTickets>1?' ×'+s.psTickets:''}</span>`:''}</div>
