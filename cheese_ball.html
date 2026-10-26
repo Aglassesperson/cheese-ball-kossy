@@ -10,6 +10,7 @@
   --bg:#F6F3EE;--bg-card:#FFFFFF;--bg-muted:#EDEAD4;--border:#DDD9CE;
   --fg:#181410;--fg-2:#7A736A;
   --accent:#E6B400;--acc-lt:#FFF7D6;--acc-fg:#3A2C00;
+  --acc-text:#A87C00;--long:#C25E00;
   --warn:#D44820;--ps:#7B4FD0;--ps-lt:#F0EAFF;
   --r:14px;--rsm:9px;
 }
@@ -17,6 +18,7 @@
   --bg:#19150E;--bg-card:#231E15;--bg-muted:#2D2820;--border:#3D3830;
   --fg:#F4EFE4;--fg-2:#A09880;
   --accent:#F0C000;--acc-lt:#2E2700;--acc-fg:#2A1E00;
+  --acc-text:#F0C000;--long:#FF9F1C;
   --warn:#FF6030;--ps:#9B6FFF;--ps-lt:#1E1340;
   color-scheme:dark;
 }}
@@ -24,6 +26,7 @@
   --bg:#19150E;--bg-card:#231E15;--bg-muted:#2D2820;--border:#3D3830;
   --fg:#F4EFE4;--fg-2:#A09880;
   --accent:#F0C000;--acc-lt:#2E2700;--acc-fg:#2A1E00;
+  --acc-text:#F0C000;--long:#FF9F1C;
   --warn:#FF6030;--ps:#9B6FFF;--ps-lt:#1E1340;
   color-scheme:dark;
 }
@@ -39,14 +42,14 @@ body{
   padding-block:0;
 }
 .app-hd{
-  background:var(--fg);color:var(--bg);text-align:center;padding:10px 16px;
-  font-weight:900;font-size:14px;letter-spacing:.1em;
+  background:var(--bg-card);color:var(--fg);text-align:center;padding:10px 16px;
+  font-weight:900;font-size:15px;letter-spacing:.1em;
   margin-left:max(-16px,calc(0px - env(safe-area-inset-left,0px)));
   margin-right:max(-16px,calc(0px - env(safe-area-inset-right,0px)));
   padding-left:max(16px,env(safe-area-inset-left,0px));
   padding-right:max(16px,env(safe-area-inset-right,0px));
 }
-.app-hd em{color:var(--accent);font-style:normal}
+.app-hd em{color:var(--acc-text);font-style:normal}
 .nav{
   position:relative;z-index:10;flex-shrink:0;
   background:var(--bg-card);border-bottom:1px solid var(--border);display:flex;
@@ -56,7 +59,7 @@ body{
   padding-right:max(0px,env(safe-area-inset-right,0px));
 }
 .nav-tab{
-  flex:1;padding:11px 6px 9px;font-size:13px;font-weight:700;
+  flex:1;padding:12px 6px 10px;font-size:15px;font-weight:700;
   cursor:pointer;border:none;background:none;color:var(--fg-2);
   border-bottom:3px solid transparent;margin-bottom:-1px;
   font-family:'Noto Sans JP',sans-serif;
@@ -72,73 +75,86 @@ body{
 .sell-left{width:44%;flex-shrink:0;display:flex;flex-direction:column;overflow:hidden;padding:12px 7px 12px 0}
 .sell-right{flex:1;overflow-y:auto;padding:12px 0 12px 7px;display:flex;flex-direction:column;gap:10px}
 .sell-right .btn-row{margin-top:auto;padding-top:2px}
+/* 注文内容だけが縮み、中身は枠内でスクロール。ほかの部品は縮めない */
+.sell-right>*{flex-shrink:0}
+.sell-right>.order-card{flex:0 1 auto;min-height:150px;display:flex;flex-direction:column}
+.order-card>*{flex-shrink:0}
+.order-card>.cart-body{flex:1 1 auto;min-height:44px;overflow-y:auto;overscroll-behavior:contain}
+/* 会計ボタンを主役に。クリアは小さめ */
+.sell-right .btn-row .btn{padding:16px;font-size:17px}
+.sell-right .btn-row .btn-primary{flex:2.2;font-size:19px;font-weight:900}
+/* スマホ縦向き：呼び出し欄を上、注文を下に並べ、会計ボタンは画面下に固定 */
+@media(max-width:700px){
+  #page-sell.on{flex-direction:column;overflow-y:auto}
+  .sell-left{width:100%;height:42vh;min-height:260px;flex-shrink:0;padding:12px 0 0}
+  .sell-right{overflow:visible;padding:12px 0 0}
+  .sell-right .btn-row{position:sticky;bottom:0;background:var(--bg);padding:8px 0 max(10px,env(safe-area-inset-bottom,10px));margin-top:0}
+  .q-recv-btn{padding:8px 10px;font-size:13px}
+}
 .sec{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--fg-2)}
 
 /* Queue */
-.queue-panel{background:var(--fg);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:10px;flex:1;overflow:hidden;min-height:0}
+.queue-panel{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:10px;flex:1;overflow:hidden;min-height:0}
 #queue-body{flex:1;overflow-y:auto;min-height:0}
 .queue-hdr{display:flex;align-items:center;gap:8px}
-.queue-hdr-title{font-size:11px;font-weight:700;letter-spacing:.09em;color:rgba(255,255,255,.35);flex:1}
+.queue-hdr-title{font-size:15px;font-weight:900;letter-spacing:.06em;color:var(--fg);flex:1}
+.queue-hdr-title small{font-size:12px;font-weight:700;color:var(--fg-2);margin-left:6px}
 .q-call-btn{
-  padding:9px 18px;border-radius:var(--rsm);border:none;background:var(--accent);color:var(--acc-fg);
-  font-size:14px;font-weight:900;cursor:pointer;font-family:'Noto Sans JP',sans-serif;white-space:nowrap;
+  padding:12px 20px;border-radius:var(--rsm);border:none;background:var(--accent);color:var(--acc-fg);
+  font-size:16px;font-weight:900;cursor:pointer;font-family:'Noto Sans JP',sans-serif;white-space:nowrap;
 }
 .q-call-btn:active{transform:scale(.93)}
 .q-call-btn:disabled{opacity:.3;cursor:default;transform:none}
 .q-list{display:flex;flex-direction:column;gap:5px}
-.q-row{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:var(--rsm);padding:9px 12px;display:flex;align-items:center;gap:10px}
-.q-row:first-child{background:rgba(255,255,255,.11);border-color:rgba(255,255,255,.2)}
+.q-row{background:var(--bg);border:1px solid var(--border);border-radius:var(--rsm);padding:9px 12px;display:flex;align-items:center;gap:10px}
+.q-row:first-child{background:var(--acc-lt);border-color:var(--accent)}
 .q-row-numwrap{display:flex;align-items:flex-end;gap:2px;flex-shrink:0;min-width:52px;justify-content:flex-end}
-.q-row-num{font-size:26px;font-weight:900;color:var(--accent);font-variant-numeric:tabular-nums;line-height:1}
+.q-row-num{font-size:26px;font-weight:900;color:var(--acc-text);font-variant-numeric:tabular-nums;line-height:1}
 .q-row:first-child .q-row-num{font-size:32px}
-.q-row-ban{font-size:12px;font-weight:700;color:rgba(255,255,255,.4);padding-bottom:2px}
+.q-row-ban{font-size:12px;font-weight:700;color:var(--fg-2);padding-bottom:2px}
 .q-row-info{flex:1;min-width:0}
-.q-row-items{font-size:13px;font-weight:700;color:#fff;line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.q-row-items{font-size:15px;font-weight:700;color:var(--fg);line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .q-row-meta{display:flex;gap:6px;align-items:center;margin-top:2px;flex-wrap:wrap}
-.q-row-wait{font-size:12px;font-weight:700;color:rgba(255,255,255,.7);font-variant-numeric:tabular-nums}
-.q-row-wait.long{color:#FF9F1C} /* 10分以上待たせている */
-.q-row-ps{font-size:10px;font-weight:700;color:var(--ps);background:rgba(155,111,255,.18);border-radius:4px;padding:1px 5px}
+.q-row-wait{font-size:12px;font-weight:700;color:var(--fg-2);font-variant-numeric:tabular-nums}
+.q-row-wait.long{color:var(--long)} /* 10分以上待たせている */
+.q-row-ps{font-size:12px;font-weight:700;color:var(--ps);background:var(--ps-lt);border-radius:5px;padding:2px 7px}
 /* おまけは作り忘れ防止のため目立たせる */
 .q-bonus{display:inline-block;font-size:14px;font-weight:900;line-height:1.2;color:#2A1A00;background:#FF9F1C;border-radius:6px;padding:2px 8px;white-space:nowrap;box-shadow:0 0 0 2px rgba(255,159,28,.35);font-variant-numeric:tabular-nums}
 .q-now-row .q-bonus{font-size:15px}
 .ov-bonus-row{display:flex;justify-content:space-between;align-items:center;font-size:16px;font-weight:900;color:#2A1A00;background:#FF9F1C;border-radius:8px;padding:6px 10px;margin-top:4px}
-.queue-empty{text-align:center;padding:14px 0 4px;font-size:13px;color:rgba(255,255,255,.3)}
-.q-now-called{background:rgba(240,192,0,.08);border:1px solid rgba(240,192,0,.22);border-radius:var(--rsm);padding:9px 13px;display:flex;flex-direction:column;gap:7px;flex-shrink:0;max-height:50%;overflow-y:auto}
-.q-now-label{font-size:9px;font-weight:700;letter-spacing:.12em;color:rgba(255,255,255,.4);text-transform:uppercase}
+.queue-empty{text-align:center;padding:18px 0 6px;font-size:14px;color:var(--fg-2)}
+.q-now-called{background:var(--acc-lt);border:1.5px solid var(--accent);border-radius:var(--rsm);padding:9px 13px;display:flex;flex-direction:column;gap:7px;flex-shrink:0;max-height:50%;overflow-y:auto}
+.q-now-label{font-size:13px;font-weight:900;letter-spacing:.06em;color:var(--acc-text)}
 .q-now-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.q-now-detail{font-size:11px;font-weight:700;color:rgba(255,255,255,.65);flex:1;min-width:0;line-height:1.4}
+.q-now-detail{font-size:14px;font-weight:700;color:var(--fg);flex:1;min-width:0;line-height:1.4}
 .q-now-numwrap{display:flex;align-items:flex-end;gap:2px;flex-shrink:0;min-width:52px;justify-content:flex-end}
-.q-now-val{font-size:30px;font-weight:900;color:var(--accent);font-variant-numeric:tabular-nums;line-height:1}
-.q-now-ban{font-size:12px;font-weight:700;color:rgba(255,255,255,.35);padding-bottom:2px}
-.q-recv-btn{font-size:10px;font-weight:700;padding:4px 9px;border-radius:6px;background:rgba(0,210,100,.1);border:1px solid rgba(0,210,100,.22);color:rgba(60,220,120,.75);cursor:pointer;white-space:nowrap;transition:background .15s;font-family:inherit}
-.q-recv-btn:hover{background:rgba(0,210,100,.22)}
-.qc-wait{font-size:10px;font-weight:700;color:rgba(255,255,255,.32);margin-top:3px;font-variant-numeric:tabular-nums}
-.qcs-wait{font-size:9px;color:rgba(255,255,255,.28);font-weight:700;margin-top:2px;font-variant-numeric:tabular-nums}
-.num-warn{text-align:center;font-size:11px;font-weight:700;color:var(--accent);background:rgba(230,180,0,.12);border-radius:6px;padding:5px 10px}
+.q-now-val{font-size:30px;font-weight:900;color:var(--acc-text);font-variant-numeric:tabular-nums;line-height:1}
+.q-now-ban{font-size:12px;font-weight:700;color:var(--fg-2);padding-bottom:2px}
+.q-recv-btn{font-size:14px;font-weight:900;padding:9px 14px;border-radius:8px;background:#1FA463;border:none;color:#fff;cursor:pointer;white-space:nowrap;transition:background .15s;font-family:inherit}
+.q-recv-btn:hover{background:#25B96F}
+.q-recv-btn:active{transform:scale(.95)}
+.num-warn{text-align:center;font-size:13px;font-weight:700;color:var(--acc-text);background:rgba(230,180,0,.12);border-radius:6px;padding:5px 10px}
 
 /* PS card */
 .ps-card{
   background:var(--ps-lt);border:1.5px solid var(--ps);border-radius:var(--r);
-  padding:12px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  padding:10px 14px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;
 }
-.ps-card-info{flex:1;min-width:90px}
-.ps-card-label{font-size:10px;font-weight:700;color:var(--ps);letter-spacing:.07em;text-transform:uppercase}
-.ps-card-remain{font-size:26px;font-weight:900;color:var(--ps);font-variant-numeric:tabular-nums;line-height:1.1}
-.ps-card-remain small{font-size:14px;font-weight:600}
-.ps-card-sub{font-size:11px;color:var(--ps);opacity:.65;margin-top:1px;font-variant-numeric:tabular-nums}
-.ps-card-actions{display:flex;align-items:center;gap:10px;flex-shrink:0}
-.ps-ctrl{display:flex;align-items:center;gap:5px}
-.ps-ctrl-lbl{font-size:10px;color:var(--ps);font-weight:700;white-space:nowrap}
-.ps-btn{width:26px;height:26px;border-radius:50%;border:1.5px solid var(--ps);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;color:var(--ps);line-height:1}
-.ps-btn:disabled{opacity:.3;cursor:default}
-.ps-btn-n{font-size:16px;font-weight:900;min-width:26px;text-align:center;color:var(--ps);font-variant-numeric:tabular-nums}
-.ps-issued-input{width:58px;padding:4px 6px;border:1.5px solid var(--ps);border-radius:var(--rsm);text-align:center;font-size:16px;font-weight:900;font-family:'Noto Sans JP',sans-serif;background:var(--ps-lt);color:var(--ps);font-variant-numeric:tabular-nums}
-.ps-issued-input:focus{outline:none;border-width:2px}
-.ps-refund{padding:7px 13px;border-radius:var(--rsm);border:1.5px solid var(--ps);background:transparent;color:var(--ps);font-size:12px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;white-space:nowrap}
-.ps-refund:disabled{opacity:.3;cursor:default}
+.ps-card-label{font-size:14px;font-weight:900;color:var(--ps)}
+.ps-card-remain{font-size:28px;font-weight:900;color:var(--ps);font-variant-numeric:tabular-nums;line-height:1}
+.ps-card-remain small{font-size:14px;font-weight:700;margin-left:1px}
+.ps-card-sub{font-size:12px;font-weight:700;color:var(--ps);opacity:.8;margin-left:auto;font-variant-numeric:tabular-nums}
+.ps-card{align-items:center}
+.ps-refund-btn{align-self:center;padding:8px 16px;border-radius:var(--rsm);border:1.5px solid var(--ps);background:var(--bg-card);color:var(--ps);font-size:14px;font-weight:900;cursor:pointer;font-family:inherit;white-space:nowrap}
+.ps-refund-btn:active:not(:disabled){transform:scale(.95)}
+.ps-refund-btn:disabled{opacity:.35;cursor:default}
+.ps-card.low{border-color:var(--warn);background:color-mix(in srgb,var(--warn) 10%,var(--bg-card))}
+.ps-card.low .ps-card-label,.ps-card.low .ps-card-remain{color:var(--warn)}
 
 /* Products */
 .prod-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+/* 横に余裕がある画面では商品ボタンを1列に並べ、注文内容の高さを確保する */
+@media(min-width:900px){.prod-grid{grid-template-columns:repeat(4,1fr)}.prod-btn{padding-top:18px}.prod-dot{top:7px;right:7px;width:10px;height:10px}}
 .prod-btn{
   background:var(--bg-card);border:2px solid var(--border);border-radius:var(--r);
   padding:14px 10px 12px;cursor:pointer;text-align:center;font-family:'Noto Sans JP',sans-serif;
@@ -147,34 +163,34 @@ body{
 }
 .prod-btn:hover{border-color:var(--accent);box-shadow:0 3px 12px rgba(230,180,0,.18)}
 .prod-btn:active{transform:scale(.95)}
-.prod-dot{width:9px;height:9px;border-radius:50%;position:absolute;top:9px;right:9px}
-.prod-name{font-size:15px;font-weight:700;margin-bottom:4px}
-.prod-price{font-size:24px;font-weight:900;color:var(--accent);font-variant-numeric:tabular-nums;line-height:1}
+.prod-dot{width:12px;height:12px;border-radius:50%;position:absolute;top:10px;right:10px}
+.prod-name{font-size:17px;font-weight:900;margin-bottom:6px}
+.prod-price{font-size:26px;font-weight:900;color:var(--accent);font-variant-numeric:tabular-nums;line-height:1}
 .prod-price small{font-size:11px;font-weight:400;color:var(--fg-2)}
 
 /* Cart */
 .card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
-.card-hd{padding:8px 13px;font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--fg-2);background:var(--bg-muted);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
-.order-badge{font-size:15px;font-weight:900;color:var(--accent);text-transform:none;letter-spacing:0}
-.cart-empty{padding:18px 13px;text-align:center;color:var(--fg-2);font-size:13px}
-.cart-row{display:flex;align-items:center;padding:8px 13px;gap:8px;border-bottom:1px solid var(--border)}
-.cart-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-.cart-name{font-size:14px;font-weight:600;flex:1;min-width:0}
-.cart-qty{display:flex;align-items:center;gap:6px}
-.qty-btn{width:25px;height:25px;border-radius:50%;border:1.5px solid var(--border);background:var(--bg-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--fg);line-height:1}
+.card-hd{padding:9px 14px;font-size:14px;font-weight:900;letter-spacing:.04em;text-transform:uppercase;color:var(--fg-2);background:var(--bg-muted);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.order-badge{font-size:20px;font-weight:900;color:var(--accent);text-transform:none;letter-spacing:0}
+.cart-empty{padding:22px 14px;text-align:center;color:var(--fg-2);font-size:14px}
+.cart-row{display:flex;align-items:center;padding:6px 14px;gap:10px;border-bottom:1px solid var(--border)}
+.cart-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.cart-name{font-size:16px;font-weight:700;flex:1;min-width:0}
+.cart-qty{display:flex;align-items:center;gap:8px}
+.qty-btn{width:34px;height:34px;border-radius:50%;border:1.5px solid var(--border);background:var(--bg-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:var(--fg);line-height:1}
 .qty-btn:hover{border-color:var(--accent)}
-.qty-n{font-size:14px;font-weight:700;min-width:18px;text-align:center;font-variant-numeric:tabular-nums}
-.cart-sub{font-size:13px;font-weight:700;min-width:52px;text-align:right;font-variant-numeric:tabular-nums}
-.ps-cart-row{display:flex;align-items:center;padding:9px 13px;gap:8px;background:var(--ps-lt);border-bottom:1px solid var(--border)}
-.ps-cart-lbl{font-size:13px;font-weight:700;color:var(--ps);flex:1}
-.ps-cart-disc{font-size:12px;color:var(--ps);font-weight:700;font-variant-numeric:tabular-nums}
-.ps-stepper{display:flex;align-items:center;gap:6px}
-.ps-s-btn{width:24px;height:24px;border-radius:50%;border:1.5px solid var(--ps);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;color:var(--ps);line-height:1}
+.qty-n{font-size:18px;font-weight:900;min-width:22px;text-align:center;font-variant-numeric:tabular-nums}
+.cart-sub{font-size:15px;font-weight:700;min-width:60px;text-align:right;font-variant-numeric:tabular-nums}
+.ps-cart-row{display:flex;align-items:center;padding:6px 14px;gap:10px;background:var(--ps-lt);border-bottom:1px solid var(--border)}
+.ps-cart-lbl{font-size:15px;font-weight:700;color:var(--ps);flex:1}
+.ps-cart-disc{font-size:14px;color:var(--ps);font-weight:700;font-variant-numeric:tabular-nums}
+.ps-stepper{display:flex;align-items:center;gap:8px}
+.ps-s-btn{width:34px;height:34px;border-radius:50%;border:1.5px solid var(--ps);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:var(--ps);line-height:1}
 .ps-s-btn:disabled{opacity:.3;cursor:default}
-.ps-s-n{font-size:15px;font-weight:900;min-width:20px;text-align:center;color:var(--ps);font-variant-numeric:tabular-nums}
-.cart-foot{padding:11px 13px;border-top:2px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--bg-muted)}
-.cart-foot-lbl{font-weight:700;font-size:13px}
-.cart-total{font-weight:900;font-size:25px;color:var(--accent);font-variant-numeric:tabular-nums}
+.ps-s-n{font-size:18px;font-weight:900;min-width:22px;text-align:center;color:var(--ps);font-variant-numeric:tabular-nums}
+.cart-foot{padding:8px 14px;border-top:2px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--bg-muted)}
+.cart-foot-lbl{font-weight:900;font-size:16px}
+.cart-total{font-weight:900;font-size:32px;color:var(--accent);font-variant-numeric:tabular-nums}
 
 /* Buttons */
 .btn-row{display:flex;gap:8px}
@@ -185,49 +201,41 @@ body{
 .btn-ghost{background:var(--bg-muted);color:var(--fg-2);border:1px solid var(--border)}
 .btn-danger{background:var(--bg-muted);color:var(--warn);border:1px solid var(--warn)}
 
-/* Display mode */
+/* Display mode（お客様向け：明るい背景。番号は遠くからでも読める濃い黄土色） */
 #page-display{
-  position:fixed;inset:0;background:#080604;z-index:200;
+  position:fixed;inset:0;background:#FFFBF0;color:#181410;z-index:200;
   display:none;flex-direction:column;align-items:center;justify-content:center;gap:0;
   font-family:'Noto Sans JP',sans-serif;
   padding-left:max(16px,env(safe-area-inset-left,0px));
   padding-right:max(16px,env(safe-area-inset-right,0px));
 }
 #page-display.on{display:flex}
-.disp-brand{font-size:13px;font-weight:700;letter-spacing:.2em;color:rgba(255,255,255,.15);margin-bottom:18px}
-.disp-call-label{font-size:clamp(11px,2vw,15px);font-weight:700;letter-spacing:.22em;color:rgba(255,255,255,.28);text-transform:uppercase;margin-bottom:8px}
+html.disp-mode body{background:#FFFBF0}
+.disp-brand{font-size:clamp(13px,2vw,18px);font-weight:900;letter-spacing:.2em;color:#9A6B00;margin-bottom:18px}
+.disp-call-label{font-size:clamp(13px,2.4vw,20px);font-weight:900;letter-spacing:.18em;color:#5C544A;margin-bottom:8px}
 .disp-nums-wrap{display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-end;gap:clamp(8px,3vw,28px)}
 .disp-numcard{display:flex;align-items:flex-end;gap:4px}
 .disp-num{
-  font-weight:900;color:#F0C000;line-height:1;
+  font-weight:900;color:#9A6B00;line-height:1;
   font-variant-numeric:tabular-nums;letter-spacing:-.02em;
-  text-shadow:0 0 80px rgba(240,192,0,.25);
   transition:font-size .2s;
 }
 @keyframes callIn{from{opacity:0;transform:scale(.72) translateY(16px)}to{opacity:1;transform:scale(1) translateY(0)}}
 .disp-num.fresh{animation:callIn .42s cubic-bezier(.34,1.36,.64,1) forwards}
-.disp-ban{font-weight:700;color:rgba(255,255,255,.38);transition:font-size .2s}
-.disp-empty{font-size:clamp(14px,3.5vw,24px);font-weight:700;color:rgba(255,255,255,.18);letter-spacing:.1em}
-.disp-recent-wrap{margin-top:24px;text-align:center}
-.disp-recent-label{font-size:10px;font-weight:700;letter-spacing:.15em;color:rgba(255,255,255,.18);margin-bottom:10px}
-.disp-recent-nums{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
-.disp-recent-num{
-  font-size:clamp(20px,4vw,28px);font-weight:900;color:rgba(255,255,255,.22);
-  font-variant-numeric:tabular-nums;background:rgba(255,255,255,.05);
-  padding:6px 14px;border-radius:10px;
-}
+.disp-ban{font-weight:900;color:#5C544A;transition:font-size .2s}
+.disp-empty{font-size:clamp(16px,3.5vw,28px);font-weight:700;color:#7A736A;letter-spacing:.1em}
 .disp-next-wrap{margin-top:22px;text-align:center}
-.disp-next-label{font-size:clamp(10px,1.8vw,14px);font-weight:700;letter-spacing:.18em;color:rgba(255,255,255,.22);margin-bottom:4px}
-.disp-next-num{font-size:clamp(28px,6vw,52px);font-weight:900;color:rgba(255,255,255,.45);font-variant-numeric:tabular-nums}
+.disp-next-label{font-size:clamp(11px,1.8vw,15px);font-weight:900;letter-spacing:.18em;color:#7A736A;margin-bottom:4px}
+.disp-next-num{font-size:clamp(28px,6vw,52px);font-weight:900;color:#5C544A;font-variant-numeric:tabular-nums}
 .disp-wait-info{margin-top:clamp(12px,3vh,26px);display:flex;gap:clamp(10px,3vw,28px);justify-content:center;flex-wrap:wrap}
-.dw-item{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:14px;padding:clamp(6px,1.5vh,12px) clamp(16px,3vw,28px);text-align:center;min-width:clamp(120px,22vw,200px)}
-.dw-lbl{font-size:clamp(11px,1.8vw,16px);font-weight:700;letter-spacing:.12em;color:rgba(255,255,255,.65)}
-.dw-val{font-size:clamp(28px,min(6vw,8vh),56px);font-weight:900;line-height:1.15;color:#F0C000;font-variant-numeric:tabular-nums}
-.dw-val small{font-size:.42em;font-weight:700;color:rgba(255,255,255,.75);margin:0 2px}
+.dw-item{background:#fff;border:1.5px solid #E6DCC4;border-radius:14px;padding:clamp(6px,1.5vh,12px) clamp(16px,3vw,28px);text-align:center;min-width:clamp(120px,22vw,200px);box-shadow:0 2px 10px rgba(120,90,0,.08)}
+.dw-lbl{font-size:clamp(11px,1.8vw,16px);font-weight:700;letter-spacing:.12em;color:#5C544A}
+.dw-val{font-size:clamp(28px,min(6vw,8vh),56px);font-weight:900;line-height:1.15;color:#9A6B00;font-variant-numeric:tabular-nums}
+.dw-val small{font-size:.42em;font-weight:700;color:#5C544A;margin:0 2px}
 .disp-status{
   position:fixed;bottom:max(18px,env(safe-area-inset-bottom,18px));
   left:50%;transform:translateX(-50%);
-  font-size:10px;color:rgba(255,255,255,.18);letter-spacing:.05em;white-space:nowrap;
+  font-size:11px;color:#9A928A;letter-spacing:.05em;white-space:nowrap;
 }
 
 /* Stats */
@@ -289,8 +297,9 @@ body{
 .overlay-actions{display:flex;gap:9px;padding:0 17px 17px}
 
 /* Toast */
-.toast{position:fixed;bottom:max(22px,env(safe-area-inset-bottom,22px));left:50%;transform:translateX(-50%) translateY(60px);background:var(--fg);color:var(--bg);padding:11px 24px;border-radius:50px;font-weight:700;font-size:13px;white-space:nowrap;z-index:100;transition:transform .28s cubic-bezier(.34,1.4,.64,1),opacity .25s;opacity:0;pointer-events:none}
+.toast{position:fixed;top:max(96px,calc(env(safe-area-inset-top,0px) + 96px));left:50%;transform:translateX(-50%) translateY(-20px);background:var(--fg);color:var(--bg);padding:11px 24px;border-radius:50px;font-weight:700;font-size:13px;white-space:nowrap;z-index:100;transition:transform .28s cubic-bezier(.34,1.4,.64,1),opacity .25s;opacity:0;pointer-events:none}
 .toast.on{transform:translateX(-50%) translateY(0);opacity:1}
+@media(max-width:480px){.toast{white-space:normal;max-width:calc(100% - 32px);text-align:center}}
 /* お客様表示の端末ではスタッフ用の画面を一切描画しない */
 .disp-mode .app-hd,.disp-mode .nav,.disp-mode .page,.disp-mode .overlay{display:none!important}
 </style>
@@ -306,6 +315,8 @@ const STAFF_KEY='cb3817';
 const IS_STAFF=new URLSearchParams(location.search).get('staff')===STAFF_KEY;
 // 描画前に判定して、お客様側で販売画面が一瞬でも映らないようにする
 if(!IS_STAFF)document.documentElement.classList.add('disp-mode');
+// 販売画面は端末がダークモードでも常に明るい配色にする
+else document.documentElement.dataset.theme='light';
 </script>
 </head>
 <body>
@@ -320,7 +331,7 @@ if(!IS_STAFF)document.documentElement.classList.add('disp-mode');
   <div class="sell-left">
     <div class="queue-panel">
       <div class="queue-hdr">
-        <div class="queue-hdr-title">呼出し待ち</div>
+        <div class="queue-hdr-title">呼出し待ち<small id="q-count"></small></div>
         <button class="q-call-btn" id="q-call" onclick="callNext()" disabled>次を呼出す ▶</button>
       </div>
       <div id="q-now-called" class="q-now-called" hidden></div>
@@ -329,35 +340,23 @@ if(!IS_STAFF)document.documentElement.classList.add('disp-mode');
   </div>
 
   <div class="sell-right">
-  <div class="ps-card">
-    <div style="font-size:20px;flex-shrink:0">🎟</div>
-    <div class="ps-card-info">
-      <div class="ps-card-label">前売り券　残り</div>
-      <div class="ps-card-remain" id="ps-remain">—<small>枚</small></div>
-      <div class="ps-card-sub" id="ps-sub"></div>
-    </div>
-    <div class="ps-card-actions">
-      <div class="ps-ctrl">
-        <span class="ps-ctrl-lbl">発行</span>
-        <input class="ps-issued-input" id="ps-iss-n" type="number" min="0" max="9999" oninput="setIssued(this.value)">
-        <span class="ps-ctrl-lbl">枚</span>
-      </div>
-      <div class="ps-ctrl">
-        <span class="ps-ctrl-lbl">返金</span>
-        <input class="ps-issued-input" id="ps-ref-n" type="number" min="0" max="9999" oninput="setRefund(this.value)">
-        <span class="ps-ctrl-lbl">枚</span>
-      </div>
-    </div>
+  <!-- 前売り券は残り枚数だけ表示。発行・返金枚数は設定タブで変更 -->
+  <div class="ps-card" id="ps-card">
+    <div class="ps-card-label">🎟 前売り券 残り</div>
+    <div class="ps-card-remain" id="ps-remain">—<small>枚</small></div>
+    <div class="ps-card-sub" id="ps-sub"></div>
+    <button class="ps-refund-btn" id="ps-refund-btn" onclick="askRefundPs()">返金</button>
   </div>
 
   <div class="prod-grid" id="prod-grid"></div>
 
-  <div class="card">
+  <div class="card order-card">
     <div class="card-hd">
       <span>注文内容</span>
       <span class="order-badge" id="order-badge"></span>
     </div>
-    <div id="cart-rows"></div>
+    <!-- 商品が多いときは商品の行だけスクロール（見出し・前売り券・おまけ・合計は常に見える） -->
+    <div class="cart-body" id="cart-rows"></div>
     <div class="ps-cart-row" id="ps-cart-row" hidden>
       <div style="font-size:16px">🎟</div>
       <div class="ps-cart-lbl">前売り券</div>
@@ -417,6 +416,20 @@ if(!IS_STAFF)document.documentElement.classList.add('disp-mode');
   </div>
   <div class="sec">前売り券</div>
   <div class="card">
+    <div class="setting-row">
+      <div class="setting-info">
+        <div class="setting-name">発行枚数</div>
+        <div class="setting-desc">売った前売り券の枚数（使用済み＋返金の合計より少なくはできません）</div>
+      </div>
+      <input class="setting-input" id="ps-iss-n" type="number" min="0" max="9999" inputmode="numeric" onchange="setIssued(this.value)">
+    </div>
+    <div class="setting-row">
+      <div class="setting-info">
+        <div class="setting-name">返金枚数</div>
+        <div class="setting-desc">払い戻した前売り券の枚数</div>
+      </div>
+      <input class="setting-input" id="ps-ref-n" type="number" min="0" max="9999" inputmode="numeric" onchange="setRefund(this.value)">
+    </div>
     <div class="setting-row">
       <div class="setting-info">
         <div class="setting-name">おまけの初期値（1枚あたり）</div>
@@ -642,6 +655,9 @@ function renderPsCard(){
   const parts=[`発行 ${cfg.psIssued}枚`,`使用 ${psUsed()}枚`];
   if(cfg.psRefunds>0)parts.push(`返金 ${cfg.psRefunds}枚`);
   document.getElementById('ps-sub').textContent=parts.join(' / ');
+  document.getElementById('ps-refund-btn').disabled=rem<=0;
+  // 残りが少ないときは色を変えて知らせる
+  document.getElementById('ps-card').classList.toggle('low',rem<=5);
   const inp=document.getElementById('ps-iss-n');
   if(document.activeElement!==inp)inp.value=cfg.psIssued;
   const ref=document.getElementById('ps-ref-n');
@@ -654,6 +670,22 @@ function setIssued(v){
   const minN=psUsed()+(cfg.psRefunds||0);
   cfg.psIssued=Math.max(minN,n);
   saveCfg();renderPsCard();renderCart();
+}
+// 販売画面の「返金」ボタン：確認してから1枚ずつ返金する
+function askRefundPs(){
+  if(psRemain()<=0){showToast('返金できる前売り券がありません');return;}
+  document.getElementById('confirm-msg').innerHTML=
+    `前売り券を<b>1枚</b>返金します（${fmt(PS_PRICE)}をお返しください）。<br>残り ${psRemain()}枚 → ${psRemain()-1}枚`;
+  _cb=()=>{
+    if(psRemain()<=0){showToast('返金できる前売り券がありません');return;}
+    cfg.psRefunds=(cfg.psRefunds||0)+1;saveCfg();
+    // 会計中のカートで使う枚数が残りを超えたら減らす
+    const pst=Math.min(psTickets,psRemain());
+    if(pst!==psTickets){psTickets=pst;cartBonus=psBonusFor(pst);}
+    renderPsCard();renderCart();
+    showToast(`🎟 前売り券を1枚返金しました（${fmt(PS_PRICE)}）`);
+  };
+  document.getElementById('ov-confirm').classList.add('on');
 }
 function setRefund(v){
   const n=Math.max(0,parseInt(v)||0);
@@ -722,6 +754,7 @@ function timeAgo(ts){
 function renderQueue(){
   const waiting=uncalled();
   document.getElementById('q-call').disabled=!waiting.length;
+  document.getElementById('q-count').textContent=waiting.length?`${waiting.length}組`:'';
   // 呼び出し中（呼んだが未受け取り）パネル
   const nowEl=document.getElementById('q-now-called');
   // 長く待っている（若い）番号を上に。多いときは枠内をスクロール
@@ -775,7 +808,12 @@ function renderProducts(){
     </button>`).join('');
 }
 
-function addItem(id){cart[id]=(cart[id]||0)+1;renderCart();}
+function addItem(id){
+  cart[id]=(cart[id]||0)+1;renderCart();
+  // 注文内容がスクロールしているときも、押した商品の行を見える位置に出す
+  const row=document.querySelector(`#cart-rows [data-id="${id}"]`);
+  if(row)row.scrollIntoView({block:'nearest'});
+}
 function changeQty(id,d){
   const n=(cart[id]||0)+d;
   if(n<=0){delete cart[id];}else{cart[id]=n;}
@@ -807,7 +845,7 @@ function renderCart(){
     document.getElementById('ps-cart-row').hidden=true;
     document.getElementById('bonus-cart-row').hidden=true;
   }else{
-    body.innerHTML=items.map(p=>{const q=cart[p.id];return `<div class="cart-row">
+    body.innerHTML=items.map(p=>{const q=cart[p.id];return `<div class="cart-row" data-id="${p.id}">
       <span class="cart-dot" style="background:${p.color}"></span>
       <div class="cart-name">${p.name}</div>
       <div class="cart-qty">
