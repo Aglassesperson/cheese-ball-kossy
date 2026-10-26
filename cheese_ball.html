@@ -375,10 +375,10 @@ body{
     <div class="setting-row" style="border-top:1px solid var(--border);margin-top:10px;padding-top:10px">
       <div class="setting-info">
         <div class="setting-name">予想待ち時間（分/人）</div>
-        <div class="setting-desc">0にすると実績から自動計算します</div>
+        <div class="setting-desc">0.5分（30秒）単位。0にすると実績から自動計算します</div>
       </div>
       <div style="display:flex;gap:6px;align-items:center">
-        <input class="setting-input" type="number" min="0" max="60" id="waitmin-input" disabled style="opacity:.5" onchange="confirmWaitMin(this.value)">
+        <input class="setting-input" type="number" min="0" max="60" step="0.5" inputmode="decimal" id="waitmin-input" disabled style="opacity:.5" onchange="confirmWaitMin(this.value)">
         <button id="waitmin-lock-btn" class="btn btn-ghost" style="padding:6px 10px;font-size:13px;white-space:nowrap" onclick="unlockWaitMin()">変更</button>
       </div>
     </div>
@@ -515,6 +515,7 @@ function load(){
   if(cfg.psRefunds==null)  cfg.psRefunds=0;
   if(cfg.numMax==null)     cfg.numMax=99;
   if(cfg.lastCalled==null) cfg.lastCalled=[];
+  if(cfg.waitMin==null)    cfg.waitMin=0.5; // 既定は1人30秒
   let ch=false;
   sales.forEach((s,i)=>{
     if(s.called==null){s.called=true;ch=true;}
@@ -607,13 +608,15 @@ function setRefund(v){
   saveCfg();renderPsCard();renderCart();
 }
 
+// 待ち時間は0.5分（30秒）単位で扱う
+function roundHalf(x){return Math.round(x*2)/2;}
 function calcAvgServiceMin(){
   const withTs=[...sales].filter(s=>s.ts).sort((a,b)=>a.ts-b.ts);
   if(withTs.length<2)return null;
   const last=withTs.slice(-6);
   let total=0,count=0;
-  for(let i=1;i<last.length;i++){const d=(last[i].ts-last[i-1].ts)/60000;if(d>0&&d<10){total+=d;count++;}}
-  return count>0?Math.max(1,Math.round(total/count)):null;
+  for(let i=1;i<last.length;i++){const d=(last[i].ts-last[i-1].ts)/60000;if(d>=0.05&&d<10){total+=d;count++;}}
+  return count>0?Math.max(0.5,roundHalf(total/count)):null;
 }
 
 function pendingNums(){
@@ -845,7 +848,9 @@ function unlockWaitMin(){
   btn.textContent='確定';btn.onclick=()=>confirmWaitMin(inp.value);
 }
 function confirmWaitMin(v){
-  const n=Math.max(0,Math.min(60,parseInt(v)||0));
+  const f=parseFloat(v)||0;
+  // 0より大きい値は最低0.5分（0は自動計算の意味なので丸めて0にしない）
+  const n=f>0?Math.max(0.5,Math.min(60,roundHalf(f))):0;
   cfg.waitMin=n;saveCfg();syncDisplayState();
   const inp=document.getElementById('waitmin-input');
   const btn=document.getElementById('waitmin-lock-btn');
@@ -860,7 +865,7 @@ function askReset(type){
     :'全データ（売上・前売り券・設定）を削除します。<br>この操作は取り消せません。';
   _cb=()=>{
     if(type==='sales'){sales=[];cfg.lastCalled=[];}
-    else{sales=[];cfg={psIssued:30,psRefunds:0,numMax:99,lastCalled:[]};}
+    else{sales=[];cfg={psIssued:30,psRefunds:0,numMax:99,waitMin:0.5,lastCalled:[]};}
     // 番号も1番から振り直す
     if(_fbCounterRef){_fbCounterRef.set(0).catch(()=>{});_fbCounter=0;}
     cart={};psTickets=0;saveS();saveCfg();
@@ -882,7 +887,7 @@ function showToast(msg){
 async function exportExcel(){
   if(!sales.length){showToast('データがありません');return;}
   if(typeof XLSX==='undefined'){showToast('ライブラリ読込中…しばらく待ってから再試行してください');return;}
-  const sorted=[...sales].sort((a,b)=>a.num-b.num);
+  const sorted=[...sales].reverse(); // 会計順（番号は使い回すので番号順にしない）
   const n=sorted.length; // データ行数 (2〜n+1行目)
   // ── 販売明細シート ──
   // 列: A=番号 B=時刻 C=プレーン D=のり塩 E=ケチャップ F=明太マヨ G=前売り券(使用) H=当日支払(円) I=呼出済
@@ -995,7 +1000,7 @@ async function exportExcel(){
 function exportTSV(){
   if(!sales.length){showToast('データがありません');return;}
   const hdr=['番号','時刻','プレーン','のり塩','ケチャップ','明太マヨ','前売り券','割引','合計','呼出済','備考'];
-  const sorted=[...sales].sort((a,b)=>a.num-b.num);
+  const sorted=[...sales].reverse(); // 会計順（番号は使い回すので番号順にしない）
   const rows=[hdr];
   for(const s of sorted){
     const qty={};for(const it of s.items)qty[it.id]=it.qty;
@@ -1036,7 +1041,8 @@ function importExcel(input){
       if(wsCfg){
         const cd=XLSX.utils.sheet_to_json(wsCfg,{header:1,defval:''});
         const tryNum=(r,c,min)=>{const v=parseInt(cd[r]&&cd[r][c]);return(!isNaN(v)&&v>=min)?v:null;};
-        const pi=tryNum(3,1,0),pr=tryNum(4,1,0),nm=tryNum(5,1,10),wm=tryNum(6,1,0);
+        const pi=tryNum(3,1,0),pr=tryNum(4,1,0),nm=tryNum(5,1,10);
+        const wmRaw=parseFloat(cd[6]&&cd[6][1]),wm=(!isNaN(wmRaw)&&wmRaw>=0)?roundHalf(wmRaw):null;
         if(pi!=null)cfg.psIssued=pi;
         if(pr!=null)cfg.psRefunds=pr;
         if(nm!=null)cfg.numMax=Math.min(999,nm);
@@ -1068,10 +1074,15 @@ function importExcel(input){
         const total=Math.max(0,items.reduce((s,it)=>s+it.qty*it.price,0)-disc);
         const called=String(row[calledCol]).trim()==='済';
         // 過去データなので、呼出済みのものは受け取り済みとして扱う
-        newSales.push({id:`s_imp${i}_${num}`,num,time:String(row[1]||''),items,total,psTickets:pst,discount:disc,called,received:called});
+        // 時刻列から今日の日付で ts を復元（並び順を保つため行ごとに1msずらす）
+        let time=String(row[1]||''),ts=null;
+        if(typeof row[1]==='number'&&row[1]<1){const m=Math.round(row[1]*1440);time=`${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;}
+        const tm=/^(\d{1,2}):(\d{2})/.exec(time);
+        if(tm){const d=new Date();d.setHours(+tm[1],+tm[2],0,newSales.length%1000);ts=d.getTime();}
+        newSales.push({id:`s_imp${i}_${num}`,num,time,items,total,psTickets:pst,discount:disc,called,received:called,...(ts?{ts}:{})});
       }
       if(!newSales.length){showToast('読み込めるデータがありませんでした');return;}
-      sales=newSales.sort((a,b)=>b.num-a.num);
+      sales=newSales.reverse(); // シートの行順＝会計順。新しい順に並べ替える
       // 番号カウンターを読み込んだ最大番号に合わせる
       if(_fbCounterRef){_fbCounter=sales[0].num;_fbCounterRef.set(_fbCounter).catch(()=>{});}
       saveS();syncDisplayState();renderCart();renderQueue();renderPsCard();
@@ -1100,8 +1111,9 @@ function _applyDisplayState(pn, extra={}){
     const prevNums=extra.prevNums||[];
     // font size: scale down with more numbers
     const n=pn.length;
-    const numFs=n===1?'min(42vw,240px)':n===2?'min(22vw,160px)':'min(16vw,110px)';
-    const banFs=n===1?'min(8vw,52px)':n===2?'min(5vw,32px)':'min(4vw,24px)';
+    // 呼び出し中が多いときも画面からはみ出さないよう段階的に縮める
+    const numFs=n===1?'min(42vw,240px)':n===2?'min(22vw,160px)':n<=8?'min(16vw,110px)':n<=15?'min(11vw,13vh,80px)':n<=30?'min(8vw,9vh,56px)':'min(6vw,6vh,40px)';
+    const banFs=n===1?'min(8vw,52px)':n===2?'min(5vw,32px)':n<=8?'min(4vw,24px)':n<=15?'min(3vw,18px)':'min(2.4vw,14px)';
     // remember which were already shown (no re-animation)
     const existing=new Set([...numsWrap.querySelectorAll('.disp-num')].map(e=>e.dataset.num));
     numsWrap.innerHTML=pn.map(num=>{
@@ -1123,7 +1135,8 @@ function _applyDisplayState(pn, extra={}){
     const count=extra.uncalledCount;
     if(count>0){
       let txt=`<span>${count}組</span>が待ち中`;
-      if(extra.avgMin!=null){txt+=` ／ 予想 約<span>${count*extra.avgMin}分</span>`;}
+      // お客様向けは分単位に切り上げて表示
+      if(extra.avgMin!=null){txt+=` ／ 予想 約<span>${Math.ceil(count*extra.avgMin)}分</span>`;}
       waitEl.innerHTML=txt;waitEl.hidden=false;
     }else{waitEl.hidden=true;}
   }
