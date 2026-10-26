@@ -98,8 +98,7 @@ body{
 .q-row-wait{font-size:10px;font-weight:700;color:rgba(255,255,255,.32);font-variant-numeric:tabular-nums}
 .q-row-ps{font-size:10px;font-weight:700;color:var(--ps);background:rgba(155,111,255,.18);border-radius:4px;padding:1px 5px}
 .queue-empty{text-align:center;padding:14px 0 4px;font-size:13px;color:rgba(255,255,255,.3)}
-.queue-empty{text-align:center;padding:14px 0 4px;font-size:13px;color:rgba(255,255,255,.3)}
-.q-now-called{background:rgba(240,192,0,.08);border:1px solid rgba(240,192,0,.22);border-radius:var(--rsm);padding:9px 13px;display:flex;flex-direction:column;gap:7px}
+.q-now-called{background:rgba(240,192,0,.08);border:1px solid rgba(240,192,0,.22);border-radius:var(--rsm);padding:9px 13px;display:flex;flex-direction:column;gap:7px;flex-shrink:0;max-height:50%;overflow-y:auto}
 .q-now-label{font-size:9px;font-weight:700;letter-spacing:.12em;color:rgba(255,255,255,.4);text-transform:uppercase}
 .q-now-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .q-now-detail{font-size:11px;font-weight:700;color:rgba(255,255,255,.65);flex:1;min-width:0;line-height:1.4}
@@ -211,15 +210,6 @@ body{
   font-variant-numeric:tabular-nums;background:rgba(255,255,255,.05);
   padding:6px 14px;border-radius:10px;
 }
-.disp-exit{
-  position:fixed;top:max(14px,env(safe-area-inset-top,14px));
-  right:max(14px,env(safe-area-inset-right,14px));
-  background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);
-  color:rgba(255,255,255,.3);padding:7px 13px;border-radius:8px;
-  font-size:11px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;
-  transition:background .15s,color .15s;
-}
-.disp-exit:hover{background:rgba(255,255,255,.13);color:rgba(255,255,255,.55)}
 .disp-next-wrap{margin-top:22px;text-align:center}
 .disp-next-label{font-size:clamp(10px,1.8vw,14px);font-weight:700;letter-spacing:.18em;color:rgba(255,255,255,.22);margin-bottom:4px}
 .disp-next-num{font-size:clamp(28px,6vw,52px);font-weight:900;color:rgba(255,255,255,.45);font-variant-numeric:tabular-nums}
@@ -292,8 +282,22 @@ body{
 /* Toast */
 .toast{position:fixed;bottom:max(22px,env(safe-area-inset-bottom,22px));left:50%;transform:translateX(-50%) translateY(60px);background:var(--fg);color:var(--bg);padding:11px 24px;border-radius:50px;font-weight:700;font-size:13px;white-space:nowrap;z-index:100;transition:transform .28s cubic-bezier(.34,1.4,.64,1),opacity .25s;opacity:0;pointer-events:none}
 .toast.on{transform:translateX(-50%) translateY(0);opacity:1}
+/* お客様表示の端末ではスタッフ用の画面を一切描画しない */
+.disp-mode .app-hd,.disp-mode .nav,.disp-mode .page,.disp-mode .overlay{display:none!important}
 </style>
-
+<script>
+// ════════════════════════════════════════════════════════════
+//  🔑 販売画面のキー
+//  URLに何も付けずに開くと「お客様表示」になります。
+//  お客様表示：…/cheese_ball.html
+//  販売画面　：…/cheese_ball.html?staff=キー
+//  （キーは自由に変更できます。変えたらスタッフ端末のブックマークも更新）
+// ════════════════════════════════════════════════════════════
+const STAFF_KEY='cb3817';
+const IS_STAFF=new URLSearchParams(location.search).get('staff')===STAFF_KEY;
+// 描画前に判定して、お客様側で販売画面が一瞬でも映らないようにする
+if(!IS_STAFF)document.documentElement.classList.add('disp-mode');
+</script>
 </head>
 <body>
 <div class="app-hd">チーズ<em>ボール</em>　販売管理</div>
@@ -385,11 +389,24 @@ body{
     <div class="setting-row" style="border-top:1px solid var(--border);margin-top:10px;padding-top:10px">
       <div class="setting-info">
         <div class="setting-name">予想待ち時間（分/人）</div>
-        <div class="setting-desc">0にすると実績から自動計算します</div>
+        <div class="setting-desc">0.5分（30秒）単位。0にすると実績から自動計算します</div>
       </div>
       <div style="display:flex;gap:6px;align-items:center">
-        <input class="setting-input" type="number" min="0" max="60" id="waitmin-input" disabled style="opacity:.5" onchange="confirmWaitMin(this.value)">
+        <input class="setting-input" type="number" min="0" max="60" step="0.5" inputmode="decimal" id="waitmin-input" disabled style="opacity:.5" onchange="confirmWaitMin(this.value)">
         <button id="waitmin-lock-btn" class="btn btn-ghost" style="padding:6px 10px;font-size:13px;white-space:nowrap" onclick="unlockWaitMin()">変更</button>
+      </div>
+    </div>
+  </div>
+  <div class="sec">前売り券</div>
+  <div class="card">
+    <div class="setting-row">
+      <div class="setting-info">
+        <div class="setting-name">おまけの個数（1枚あたり）</div>
+        <div class="setting-desc">前売り券1枚につき追加する個数。注文・呼出し画面に「+○個」と表示します</div>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center">
+        <input class="setting-input" type="number" min="0" max="99" step="1" inputmode="numeric" id="psbonus-input" disabled style="opacity:.5" onchange="confirmPsBonus(this.value)">
+        <button id="psbonus-lock-btn" class="btn btn-ghost" style="padding:6px 10px;font-size:13px;white-space:nowrap" onclick="unlockPsBonus()">変更</button>
       </div>
     </div>
   </div>
@@ -404,12 +421,13 @@ body{
     <div class="xl-note">② ExcelファイルをWebアプリへ読込</div>
     <button class="btn btn-ghost" onclick="document.getElementById('xl-file').click()">📂 Excelファイルを読込</button>
     <input type="file" id="xl-file" accept=".xlsx,.xls" hidden onchange="importExcel(this)">
-    <div class="xl-note" style="margin-top:6px">→ ファイルを選ぶと販売データと設定が自動で読み込まれます</div>
+    <div class="xl-note" style="margin-top:6px">→ ファイルを選ぶと販売データと設定が自動で読み込まれます（①で書き出したファイルもそのまま読み込めます）</div>
   </div>
   <div class="sec">お客様向け表示</div>
   <div class="action-card">
     <div class="action-title">📺 呼び出し番号の表示画面</div>
-    <div class="xl-note">「次を呼出す」ボタンを押すと番号が自動で更新されます。同じブラウザで別タブを開くか、URLをコピーして別デバイスで開いてください。</div>
+    <div class="xl-note">「次を呼出す」ボタンを押すと番号が自動で更新されます。同じブラウザで別タブを開くか、URLをコピーして別デバイスで開いてください。お客様用のURLからは販売画面に入れません。</div>
+    <div class="xl-note">販売画面のURL（スタッフ端末でブックマークしてください）：<br><span id="staff-url" style="word-break:break-all;font-weight:700;color:var(--fg)"></span></div>
     <div class="btn-row">
       <button class="btn btn-ghost" onclick="openDisplayTab()">別タブで開く</button>
       <button class="btn btn-ghost" onclick="copyDisplayUrl()">URLをコピー</button>
@@ -457,7 +475,7 @@ body{
     </div>
     <div class="overlay-actions">
       <button class="btn btn-ghost" onclick="closeOv('ov-checkout')">戻る</button>
-      <button class="btn btn-primary" onclick="completeSale()">会計完了</button>
+      <button class="btn btn-primary" id="sale-btn" onclick="completeSale()">会計完了</button>
     </div>
   </div>
 </div>
@@ -490,6 +508,9 @@ body{
 //  2. プロジェクト設定 → ウェブアプリを追加 → config をコピー
 //  3. Realtime Database → 作成 → ルールを以下に設定:
 //     { "rules": { ".read": true, ".write": true } }
+//     ⚠ このルールはURLを知っている人なら誰でも読み書き・削除できます。
+//       販売期間中だけ使い、終わったらルールを ".write": false に戻すか
+//       データベースを削除してください。
 //  4. 下の {} の中身を置き換えて保存
 // ════════════════════════════════════════════════════════════
 const FIREBASE_CONFIG = {
@@ -510,7 +531,10 @@ const PRODUCTS=[
 ];
 const PS_PRICE=300;
 let cart={},sales=[],cfg={},psTickets=0,_cb=null,_db=null;
-let _fbSalesRef=null,_fbCounterRef=null;
+let _fbSalesRef=null,_fbCounterRef=null,_fbCounter=null,_saleBusy=false;
+
+// 番号は使い回すので、保存キーには番号ではなく一意のIDを使う
+function saleId(s,idx){return `s_${s.ts||'i'+(idx||0)}_${s.num}`;}
 
 function load(){
   try{const s=localStorage.getItem('cb_s');if(s)sales=JSON.parse(s);}catch(e){sales=[]}
@@ -519,14 +543,23 @@ function load(){
   if(cfg.psRefunds==null)  cfg.psRefunds=0;
   if(cfg.numMax==null)     cfg.numMax=99;
   if(cfg.lastCalled==null) cfg.lastCalled=[];
+  if(cfg.waitMin==null)    cfg.waitMin=0.5; // 既定は1人30秒
+  if(cfg.psBonus==null)    cfg.psBonus=0;   // 前売り券1枚あたりのおまけ個数
   let ch=false;
-  for(const s of sales){if(s.called==null){s.called=true;ch=true;}}
+  sales.forEach((s,i)=>{
+    if(s.called==null){s.called=true;ch=true;}
+    if(!s.id){s.id=saleId(s,i);ch=true;}
+  });
   if(ch)saveS();
 }
-function saveS(){
+// changed を渡すとその注文だけFirebaseに書く（複数端末の同時書き込みで消えないように）
+function saveS(changed){
   try{localStorage.setItem('cb_s',JSON.stringify(sales));}catch(e){}
-  if(_fbSalesRef){
-    const obj={};sales.forEach(s=>{ obj[String(s.num)]=s; });
+  if(!_fbSalesRef)return;
+  if(changed){
+    changed.forEach(s=>_fbSalesRef.child(s.id).set(s).catch(()=>{}));
+  }else{
+    const obj={};sales.forEach(s=>{ obj[s.id]=s; });
     _fbSalesRef.set(obj).catch(()=>{});
   }
 }
@@ -540,25 +573,28 @@ function psRevenue(){return(cfg.psIssued-cfg.psRefunds)*PS_PRICE;}
 function soldQty(id){return sales.reduce((n,s)=>{const it=(s.items||[]).find(i=>i.id===id);return n+(it?it.qty:0);},0);}
 function fmt(n){return '¥'+n.toLocaleString('ja-JP');}
 
-function nextNum(){
-  const mx=cfg.numMax||99,used=new Set(sales.map(s=>s.num));
-  if(!used.size)return 1;
-  const cur=Math.max(...used);
-  if(cur<mx)return cur+1;
-  // 上限到達 → 1番から空き番号を探す
-  for(let i=1;i<=mx;i++){if(!used.has(i))return i;}
+// 使用中 = まだ受け取っていない注文の番号（受取済みになったら再利用できる）
+function activeNums(){return new Set(sales.filter(s=>!s.received).map(s=>s.num));}
+// 最後に発行した番号（Firebase使用時は共有カウンター）
+function lastNum(){return _fbCounter!=null?_fbCounter:(sales.length?sales[0].num:0);}
+function nextNumFrom(base){
+  const mx=cfg.numMax||99,act=activeNums();
+  let n=(base||0)%mx+1;
+  // 上限の次は1番に戻り、使用中の番号は飛ばす
+  for(let i=0;i<mx;i++){if(!act.has(n))return n;n=n%mx+1;}
   return null; // 全番号使用中（登録不可）
 }
-function allNumsFull(){
-  const mx=cfg.numMax||99,used=new Set(sales.map(s=>s.num));
-  return used.size>=mx;
-}
-function maxNum(){return sales.length>0?Math.max(...sales.map(s=>s.num)):0;}
+function nextNum(){return nextNumFrom(lastNum());}
+function allNumsFull(){return nextNum()===null;}
 function uncalled(){const u=sales.filter(s=>!s.called);return u.reverse();}
-function psDiscount(){
-  const flat=PRODUCTS.flatMap(p=>Array(cart[p.id]||0).fill(p.price)).sort((a,b)=>b-a);
-  return flat.slice(0,psTickets).reduce((s,p)=>s+p,0);
+function discountFor(qty,n){
+  const flat=PRODUCTS.flatMap(p=>Array(qty[p.id]||0).fill(p.price)).sort((a,b)=>b-a);
+  return flat.slice(0,n).reduce((s,p)=>s+p,0);
 }
+function psDiscount(){return discountFor(cart,psTickets);}
+// 前売り券のおまけ個数（会計時の値を注文に保存し、あとで設定を変えても注文側は変わらない）
+function psBonusFor(n){return n*(cfg.psBonus||0);}
+function bonusTag(s){return s.bonus>0?` +${s.bonus}個`:'';}
 function cartTotal(){return Math.max(0,PRODUCTS.reduce((s,p)=>s+(cart[p.id]||0)*p.price,0)-psDiscount());}
 function totalCartItems(){return Object.values(cart).reduce((s,v)=>s+v,0);}
 
@@ -575,6 +611,10 @@ function goPage(id){
     winp.value=cfg.waitMin||0;winp.disabled=true;winp.style.opacity='.5';
     const wbtn=document.getElementById('waitmin-lock-btn');
     wbtn.textContent='変更';wbtn.onclick=unlockWaitMin;
+    const binp=document.getElementById('psbonus-input');
+    binp.value=cfg.psBonus||0;binp.disabled=true;binp.style.opacity='.5';
+    const bbtn=document.getElementById('psbonus-lock-btn');
+    bbtn.textContent='変更';bbtn.onclick=unlockPsBonus;
   }
 }
 
@@ -597,27 +637,22 @@ function setIssued(v){
   cfg.psIssued=Math.max(minN,n);
   saveCfg();renderPsCard();renderCart();
 }
-function changeIssued(d){setIssued(cfg.psIssued+d);}
 function setRefund(v){
   const n=Math.max(0,parseInt(v)||0);
   // 返金は「発行数 − 使用数」を超えられない
   cfg.psRefunds=Math.min(n,Math.max(0,cfg.psIssued-psUsed()));
-  saveCfg();renderPsCard();
-}
-function refundPs(){
-  // 返金可能な上限 = 発行数 − 使用数（residualなので使用済みとは別枠）
-  if(cfg.psRefunds>=(cfg.psIssued-psUsed())){showToast('これ以上返金できません（発行数を超えます）');return;}
-  cfg.psRefunds++;saveCfg();renderPsCard();
-  showToast(`前売り券を1枚返金（−${fmt(PS_PRICE)}）`);
+  saveCfg();renderPsCard();renderCart();
 }
 
+// 待ち時間は0.5分（30秒）単位で扱う
+function roundHalf(x){return Math.round(x*2)/2;}
 function calcAvgServiceMin(){
   const withTs=[...sales].filter(s=>s.ts).sort((a,b)=>a.ts-b.ts);
   if(withTs.length<2)return null;
   const last=withTs.slice(-6);
   let total=0,count=0;
-  for(let i=1;i<last.length;i++){const d=(last[i].ts-last[i-1].ts)/60000;if(d>0&&d<10){total+=d;count++;}}
-  return count>0?Math.max(1,Math.round(total/count)):null;
+  for(let i=1;i<last.length;i++){const d=(last[i].ts-last[i-1].ts)/60000;if(d>=0.05&&d<10){total+=d;count++;}}
+  return count>0?Math.max(0.5,roundHalf(total/count)):null;
 }
 
 function pendingNums(){
@@ -639,16 +674,17 @@ function syncDisplayState(){
 }
 
 function markReceived(num){
-  const s=sales.find(x=>x.num===num);
-  if(s)s.received=true;
-  saveS();syncDisplayState();
-  renderQueue();renderDisplay();
+  const s=sales.find(x=>x.num===num&&!x.received);
+  if(!s)return;
+  s.received=true;
+  saveS([s]);syncDisplayState();
+  renderQueue();renderCart();renderDisplay();
   showToast(`✅ ${num}番 受け取り済`);
 }
 
 function callNext(){
   const q=uncalled();if(!q.length)return;
-  q[0].called=true;saveS();
+  q[0].called=true;saveS([q[0]]);
   cfg.lastCalled=[q[0].num,...(cfg.lastCalled||[]).filter(n=>n!==q[0].num)].slice(0,5);
   saveCfg();
   syncDisplayState();
@@ -670,14 +706,15 @@ function renderQueue(){
   document.getElementById('q-call').disabled=!waiting.length;
   // 呼び出し中（呼んだが未受け取り）パネル
   const nowEl=document.getElementById('q-now-called');
-  const calledPending=sales.filter(s=>s.called&&!s.received).sort((a,b)=>(b.ts||0)-(a.ts||0));
+  // 長く待っている（若い）番号を上に。多いときは枠内をスクロール
+  const calledPending=sales.filter(s=>s.called&&!s.received).sort((a,b)=>(a.ts||0)-(b.ts||0));
   if(calledPending.length){
     nowEl.hidden=false;
     const fl2=s=>(s.items||[]).map(i=>`${i.name}${i.qty>1?' ×'+i.qty:''}`).join(' ／ ');
-    nowEl.innerHTML=`<div class="q-now-label">📢 呼び出し中</div>`+
+    nowEl.innerHTML=`<div class="q-now-label">📢 呼び出し中（${calledPending.length}組）</div>`+
       calledPending.map(s=>`<div class="q-now-row">
         <div class="q-now-val">${s.num}</div><div class="q-now-ban">番</div>
-        <div class="q-now-detail">${fl2(s)}${s.psTickets>0?` <span class="q-row-ps">🎟${s.psTickets>1?' ×'+s.psTickets:''}</span>`:''}</div>
+        <div class="q-now-detail">${fl2(s)}${s.psTickets>0?` <span class="q-row-ps">🎟${s.psTickets>1?' ×'+s.psTickets:''}${bonusTag(s)}</span>`:''}</div>
         <button class="q-recv-btn" onclick="markReceived(${s.num})">✓ 受け取り済</button>
       </div>`).join('');
   }else{nowEl.hidden=true;nowEl.innerHTML='';}
@@ -686,13 +723,13 @@ function renderQueue(){
     body.innerHTML=`<div class="queue-empty">${sales.length===0?'まだ会計がありません':'全員お呼び出し済みです ✓'}</div>`;
     return;
   }
-  const mx=cfg.numMax,cur2=maxNum(),nn=nextNum();
+  const mx=cfg.numMax,cur2=lastNum();
   const full=allNumsFull();
   const near=!full&&cur2>=mx-2&&cur2<mx;
   const fl=s=>(s.items||[]).map(i=>`${i.name}${i.qty>1?' ×'+i.qty:''}`).join(' ／ ');
   let html='';
   if(full)html+=`<div class="num-warn">🚫 番号が全て使用中（上限 ${mx}番）。受取済みにしてから新規登録できます</div>`;
-  else if(near)html+=`<div class="num-warn">⚠ まもなく上限（${mx}番）。次は ${nn}番 から再開</div>`;
+  else if(near)html+=`<div class="num-warn">⚠ まもなく上限（${mx}番）。上限の次は1番から再開</div>`;
   html+=`<div class="q-list">`+waiting.map(s=>{
     const w=timeAgo(s.ts);
     return `<div class="q-row">
@@ -702,7 +739,7 @@ function renderQueue(){
       <div class="q-row-info">
         <div class="q-row-items">${fl(s)}</div>
         <div class="q-row-meta">
-          ${s.psTickets>0?`<span class="q-row-ps">🎟 前売り${s.psTickets>1?' ×'+s.psTickets:''}</span>`:''}
+          ${s.psTickets>0?`<span class="q-row-ps">🎟 前売り${s.psTickets>1?' ×'+s.psTickets:''}${bonusTag(s)}</span>`:''}
           ${w?`<span class="q-row-wait">${w}待ち</span>`:''}
         </div>
       </div>
@@ -731,7 +768,7 @@ function clearCart(){cart={};psTickets=0;renderCart();}
 function changePsTickets(d){
   if(d>0){
     if(psTickets>=totalCartItems())return;
-    if(psRemain()<=0){showToast('前売り券の残りがありません');return;}
+    if(psTickets>=psRemain()){showToast(psRemain()<=0?'前売り券の残りがありません':`前売り券の残りは${psRemain()}枚です`);return;}
   }
   psTickets=Math.max(0,Math.min(totalCartItems(),psTickets+d));
   renderCart();
@@ -760,9 +797,10 @@ function renderCart(){
     document.getElementById('ps-cart-row').hidden=false;
     const disc=psDiscount();
     document.getElementById('ps-n').textContent=psTickets;
-    document.getElementById('ps-disc').textContent=disc>0?`−${fmt(disc)}`:'';
+    const bonus=psBonusFor(psTickets);
+    document.getElementById('ps-disc').textContent=(disc>0?`−${fmt(disc)}`:'')+(bonus>0?` おまけ+${bonus}個`:'');
     document.getElementById('ps-minus').disabled=psTickets<=0;
-    document.getElementById('ps-plus').disabled=psTickets>=n||psRemain()<=0;
+    document.getElementById('ps-plus').disabled=psTickets>=n||psTickets>=psRemain();
   }
   document.getElementById('cart-total').textContent=fmt(cartTotal());
   document.getElementById('checkout-btn').disabled=n===0||full;
@@ -772,50 +810,60 @@ function openCheckout(){
   if(allNumsFull()){showToast(`全番号使用中（上限 ${cfg.numMax||99}番）。受取済みにしてから登録してください`);return;}
   const num=nextNum(),items=PRODUCTS.filter(p=>(cart[p.id]||0)>0),disc=psDiscount();
   document.getElementById('ov-meta').innerHTML=
-    `<span>整理番号：${num}番</span>${psTickets>0?`<span class="ov-ps-badge">🎟 前売り券 ×${psTickets}</span>`:''}`;
+    `<span>整理番号：${num}番</span>${psTickets>0?`<span class="ov-ps-badge">🎟 前売り券 ×${psTickets}${psBonusFor(psTickets)>0?`（おまけ +${psBonusFor(psTickets)}個）`:''}</span>`:''}`;
   document.getElementById('ov-items').innerHTML=
     items.map(p=>{const q=cart[p.id];return `<div class="ov-item">
       <span class="ov-item-name">${p.name} × ${q}</span>
       <span class="ov-item-price">${fmt(q*p.price)}</span></div>`;}).join('')+
-    (disc>0?`<div class="ov-disc-row"><span>🎟 前売り割引 ×${psTickets}</span><span>−${fmt(disc)}</span></div>`:'');
+    (disc>0?`<div class="ov-disc-row"><span>🎟 前売り割引 ×${psTickets}</span><span>−${fmt(disc)}</span></div>`:'')+
+    (psBonusFor(psTickets)>0?`<div class="ov-disc-row"><span>🎟 前売り券おまけ</span><span>+${psBonusFor(psTickets)}個</span></div>`:'');
   document.getElementById('ov-total').textContent=fmt(cartTotal());
   document.getElementById('ov-checkout').classList.add('on');
 }
 
 async function completeSale(){
+  if(_saleBusy)return; // 連打による二重登録を防ぐ
+  _saleBusy=true;
+  const btn=document.getElementById('sale-btn');btn.disabled=true;
+  try{await doCompleteSale();}
+  finally{_saleBusy=false;btn.disabled=false;}
+}
+async function doCompleteSale(){
+  const mx=cfg.numMax||99;
+  if(!totalCartItems()){closeOv('ov-checkout');return;}
+  if(psTickets>psRemain()){showToast(`前売り券の残りは${psRemain()}枚です`);return;}
+  // 待っている間にカートが変わっても影響しないよう先に確定させる
+  const pst=psTickets,disc=psDiscount();
+  const items=PRODUCTS.filter(p=>(cart[p.id]||0)>0).map(p=>({id:p.id,name:p.name,qty:cart[p.id],price:p.price}));
+  const total=cartTotal();
   // 番号をFirebase transactionでアトミックに取得（複数端末の衝突防止）
   let num;
   if(_fbCounterRef){
     try{
-      const mx=cfg.numMax||99;
-      const result=await _fbCounterRef.transaction(cur=>{
-        const used=new Set(sales.map(s=>s.num));
-        if(used.size>=mx)return; // abort: 全番号使用中
-        let next=((cur||0)%mx)+1;
-        // 使用済みならスキップ（最大mx回試す）
-        for(let i=0;i<mx;i++){if(!used.has(next))break;next=next%mx+1;}
-        return next;
+      const tx=_fbCounterRef.transaction(cur=>{
+        const n=nextNumFrom(cur);
+        return n===null?undefined:n; // undefined = abort（全番号使用中）
       });
+      // オフラインだと transaction が終わらないので5秒で諦めて手元で採番する
+      const timeout=new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),5000));
+      const result=await Promise.race([tx,timeout]);
       if(!result.committed){showToast(`全番号使用中（上限 ${mx}番）`);return;}
       num=result.snapshot.val();
+      _fbCounter=num;
     }catch(e){
-      const nn=nextNum();
-      if(nn===null){showToast(`全番号使用中（上限 ${cfg.numMax||99}番）`);return;}
-      num=nn;
+      num=nextNum();
     }
   }else{num=nextNum();}
-  const pst=psTickets,disc=psDiscount();
-  const items=PRODUCTS.filter(p=>(cart[p.id]||0)>0).map(p=>({id:p.id,name:p.name,qty:cart[p.id],price:p.price}));
-  const total=cartTotal(),now=new Date();
+  if(num==null){showToast(`全番号使用中（上限 ${mx}番）`);return;}
+  const now=new Date(),ts=now.getTime();
   const time=`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-  sales.unshift({num,time,items,total,psTickets:pst,discount:disc,called:false,received:false,ts:Date.now()});
-  saveS();closeOv('ov-checkout');cart={};psTickets=0;
+  const sale={id:saleId({ts,num}),num,time,items,total,psTickets:pst,discount:disc,bonus:psBonusFor(pst),called:false,received:false,ts};
+  sales.unshift(sale);
+  saveS([sale]);closeOv('ov-checkout');cart={};psTickets=0;
   syncDisplayState();
   renderCart();renderQueue();renderPsCard();
   showToast(`${num}番 会計完了！ ${fmt(total)}${pst>0?' 🎟':''}`);
 }
-
-function renderStats(){}
 
 function unlockNumMax(){
   const inp=document.getElementById('nummax-input');
@@ -839,7 +887,9 @@ function unlockWaitMin(){
   btn.textContent='確定';btn.onclick=()=>confirmWaitMin(inp.value);
 }
 function confirmWaitMin(v){
-  const n=Math.max(0,Math.min(60,parseInt(v)||0));
+  const f=parseFloat(v)||0;
+  // 0より大きい値は最低0.5分（0は自動計算の意味なので丸めて0にしない）
+  const n=f>0?Math.max(0.5,Math.min(60,roundHalf(f))):0;
   cfg.waitMin=n;saveCfg();syncDisplayState();
   const inp=document.getElementById('waitmin-input');
   const btn=document.getElementById('waitmin-lock-btn');
@@ -847,18 +897,33 @@ function confirmWaitMin(v){
   btn.textContent='変更';btn.onclick=unlockWaitMin;
   showToast(n===0?'待ち時間を自動計算に設定しました':'待ち時間を'+n+'分/人に設定しました');
 }
+function unlockPsBonus(){
+  const inp=document.getElementById('psbonus-input');
+  const btn=document.getElementById('psbonus-lock-btn');
+  inp.disabled=false;inp.style.opacity='1';inp.focus();inp.select();
+  btn.textContent='確定';btn.onclick=()=>confirmPsBonus(inp.value);
+}
+function confirmPsBonus(v){
+  const n=Math.max(0,Math.min(99,parseInt(v)||0));
+  cfg.psBonus=n;saveCfg();renderCart();
+  const inp=document.getElementById('psbonus-input');
+  const btn=document.getElementById('psbonus-lock-btn');
+  inp.value=n;inp.disabled=true;inp.style.opacity='.5';
+  btn.textContent='変更';btn.onclick=unlockPsBonus;
+  showToast(n===0?'前売り券のおまけをなしにしました':'前売り券1枚につき +'+n+'個に設定しました');
+}
 
 function askReset(type){
   document.getElementById('confirm-msg').innerHTML=type==='sales'
     ?'売上履歴・呼出し状態をすべて削除します。<br>前売り券・設定はそのまま残ります。'
     :'全データ（売上・前売り券・設定）を削除します。<br>この操作は取り消せません。';
   _cb=()=>{
-    if(type==='sales'){sales=[];}
-    else{
-      sales=[];cfg={psIssued:30,psRefunds:0,numMax:99};
-      if(_fbCounterRef)_fbCounterRef.set(0).catch(()=>{});
-    }
+    if(type==='sales'){sales=[];cfg.lastCalled=[];}
+    else{sales=[];cfg={psIssued:30,psRefunds:0,numMax:99,waitMin:0.5,psBonus:0,lastCalled:[]};}
+    // 番号も1番から振り直す
+    if(_fbCounterRef){_fbCounterRef.set(0).catch(()=>{});_fbCounter=0;}
     cart={};psTickets=0;saveS();saveCfg();
+    syncDisplayState(); // お客様表示も空にする
     renderProducts();renderCart();renderQueue();renderPsCard();
     showToast('リセットしました');
   };
@@ -876,7 +941,7 @@ function showToast(msg){
 async function exportExcel(){
   if(!sales.length){showToast('データがありません');return;}
   if(typeof XLSX==='undefined'){showToast('ライブラリ読込中…しばらく待ってから再試行してください');return;}
-  const sorted=[...sales].sort((a,b)=>a.num-b.num);
+  const sorted=[...sales].reverse(); // 会計順（番号は使い回すので番号順にしない）
   const n=sorted.length; // データ行数 (2〜n+1行目)
   // ── 販売明細シート ──
   // 列: A=番号 B=時刻 C=プレーン D=のり塩 E=ケチャップ F=明太マヨ G=前売り券(使用) H=当日支払(円) I=呼出済
@@ -912,6 +977,8 @@ async function exportExcel(){
     ['前売り券純売上（円）', psRev],
     ['当日現金売上（円）',{f:`SUM(H2:H${R})`}],
     ['合計売上（円）',    {f:`L16+L17`}],
+    ['',''],
+    ['前売り券おまけ（個）', sales.reduce((n,s)=>n+(s.bonus||0),0)],
   ];
   summary.forEach(([label,val],i)=>{
     const kCell=XLSX.utils.encode_cell({c:10,r:i});
@@ -941,11 +1008,25 @@ async function exportExcel(){
     ['前売り券純売上（円）', psRev],
     ['当日現金売上（円）',             {f:`SUM(販売明細!H2:H${R})`}],
     ['合計売上（円）',                  {f:`B12+B13`}],
+    [],
+    ['前売り券おまけ（個）',           sales.reduce((n,s)=>n+(s.bonus||0),0)],
   ]);
   ws2['!cols']=[{wch:28},{wch:12}];
+  // ── 設定シート（読込時に4〜7行目のB列を読む）──
+  const ws3=XLSX.utils.aoa_to_sheet([
+    ['設定'],[],
+    ['項目','値'],
+    ['前売り券発行枚数',cfg.psIssued],
+    ['前売り券返金枚数',cfg.psRefunds],
+    ['番号の上限',cfg.numMax],
+    ['予想待ち時間（分/人、0=自動）',cfg.waitMin||0],
+    ['前売り券のおまけ（個/枚）',cfg.psBonus||0],
+  ]);
+  ws3['!cols']=[{wch:28},{wch:10}];
   const wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,ws,'販売明細');
   XLSX.utils.book_append_sheet(wb,ws2,'集計');
+  XLSX.utils.book_append_sheet(wb,ws3,'設定');
   const buf=XLSX.write(wb,{type:'array',bookType:'xlsx'});
   const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
   const now=new Date();
@@ -978,7 +1059,7 @@ async function exportExcel(){
 function exportTSV(){
   if(!sales.length){showToast('データがありません');return;}
   const hdr=['番号','時刻','プレーン','のり塩','ケチャップ','明太マヨ','前売り券','割引','合計','呼出済','備考'];
-  const sorted=[...sales].sort((a,b)=>a.num-b.num);
+  const sorted=[...sales].reverse(); // 会計順（番号は使い回すので番号順にしない）
   const rows=[hdr];
   for(const s of sorted){
     const qty={};for(const it of s.items)qty[it.id]=it.qty;
@@ -1020,14 +1101,21 @@ function importExcel(input){
         const cd=XLSX.utils.sheet_to_json(wsCfg,{header:1,defval:''});
         const tryNum=(r,c,min)=>{const v=parseInt(cd[r]&&cd[r][c]);return(!isNaN(v)&&v>=min)?v:null;};
         const pi=tryNum(3,1,0),pr=tryNum(4,1,0),nm=tryNum(5,1,10);
+        const wmRaw=parseFloat(cd[6]&&cd[6][1]),wm=(!isNaN(wmRaw)&&wmRaw>=0)?roundHalf(wmRaw):null;
         if(pi!=null)cfg.psIssued=pi;
         if(pr!=null)cfg.psRefunds=pr;
-        if(nm!=null)cfg.numMax=nm;
+        if(nm!=null)cfg.numMax=Math.min(999,nm);
+        if(wm!=null)cfg.waitMin=Math.min(60,wm);
+        const pb=tryNum(7,1,0);
+        if(pb!=null)cfg.psBonus=Math.min(99,pb);
         saveCfg();
       }
       // Load sales
-      const ws=wb.Sheets['販売入力'];
-      if(!ws){showToast('「販売入力」シートが見つかりません');return;}
+      // 「販売入力」＝テキストコピーを貼ったシート（H=割引, J=呼出済）
+      // 「販売明細」＝このアプリで書き出したExcel（H=当日支払, I=呼出済、割引列なし）
+      let ws=wb.Sheets['販売入力'],discCol=7,calledCol=9;
+      if(!ws&&wb.Sheets['販売明細']){ws=wb.Sheets['販売明細'];discCol=-1;calledCol=8;}
+      if(!ws){showToast('「販売入力」または「販売明細」シートが見つかりません');return;}
       const data=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
       let start=0;
       for(let i=0;i<data.length;i++){const v=data[i][0];if(typeof v==='number'||(String(v).trim()!==''&&!isNaN(parseInt(v))&&parseInt(v)>0)){start=i;break;}}
@@ -1036,25 +1124,33 @@ function importExcel(input){
         const row=data[i];
         const num=parseInt(row[0]);
         if(isNaN(num)||num<=0)continue;
-        const pl=Math.max(0,parseInt(row[2])||0),no=Math.max(0,parseInt(row[3])||0),
-              ke=Math.max(0,parseInt(row[4])||0),me=Math.max(0,parseInt(row[5])||0);
-        if(pl+no+ke+me===0)continue;
+        // C〜F列 = PRODUCTS の順
+        const qty={};
+        PRODUCTS.forEach((p,j)=>{const q=Math.max(0,parseInt(row[2+j])||0);if(q>0)qty[p.id]=q;});
+        const items=PRODUCTS.filter(p=>qty[p.id]).map(p=>({id:p.id,name:p.name,qty:qty[p.id],price:p.price}));
+        if(!items.length)continue;
         const pst=Math.max(0,parseInt(row[6])||0);
-        const disc=Math.max(0,parseInt(row[7])||Math.min(pst,no+ke+me)*350+Math.max(0,pst-no-ke-me)*300);
-        const total=pl*300+no*350+ke*350+me*350-disc;
-        const items=[];
-        if(pl>0)items.push({id:'plain',name:'プレーン',qty:pl,price:300});
-        if(no>0)items.push({id:'norishio',name:'のり塩',qty:no,price:350});
-        if(ke>0)items.push({id:'ketchup',name:'ケチャップ',qty:ke,price:350});
-        if(me>0)items.push({id:'mentai',name:'明太マヨ',qty:me,price:350});
-        const called=String(row[9]).trim()==='済';
-        newSales.push({num,time:String(row[1]||''),items,total,psTickets:pst,discount:disc,called});
+        const rawDisc=discCol>=0?parseInt(row[discCol]):NaN;
+        const disc=(!isNaN(rawDisc)&&(rawDisc>0||pst===0))?rawDisc:discountFor(qty,pst);
+        const total=Math.max(0,items.reduce((s,it)=>s+it.qty*it.price,0)-disc);
+        const called=String(row[calledCol]).trim()==='済';
+        // 過去データなので、呼出済みのものは受け取り済みとして扱う
+        // 時刻列から今日の日付で ts を復元（並び順を保つため行ごとに1msずらす）
+        let time=String(row[1]||''),ts=null;
+        if(typeof row[1]==='number'&&row[1]<1){const m=Math.round(row[1]*1440);time=`${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;}
+        const tm=/^(\d{1,2}):(\d{2})/.exec(time);
+        if(tm){const d=new Date();d.setHours(+tm[1],+tm[2],0,newSales.length%1000);ts=d.getTime();}
+        newSales.push({id:`s_imp${i}_${num}`,num,time,items,total,psTickets:pst,discount:disc,bonus:psBonusFor(pst),called,received:called,...(ts?{ts}:{})});
       }
       if(!newSales.length){showToast('読み込めるデータがありませんでした');return;}
-      sales=newSales.sort((a,b)=>b.num-a.num);
-      saveS();renderCart();renderQueue();renderPsCard();
+      sales=newSales.reverse(); // シートの行順＝会計順。新しい順に並べ替える
+      // 番号カウンターを読み込んだ最大番号に合わせる
+      if(_fbCounterRef){_fbCounter=sales[0].num;_fbCounterRef.set(_fbCounter).catch(()=>{});}
+      saveS();syncDisplayState();renderCart();renderQueue();renderPsCard();
       const nminp=document.getElementById('nummax-input');
       if(nminp)nminp.value=cfg.numMax;
+      const wminp=document.getElementById('waitmin-input');
+      if(wminp)wminp.value=cfg.waitMin||0;
       showToast(`✅ ${newSales.length}件 読み込み完了`);
     }catch(err){showToast('読込エラー: '+err.message);}
   };
@@ -1063,7 +1159,10 @@ function importExcel(input){
 }
 
 // ─── Display mode ───────────────────────────────────────────────
-function isDisplayMode(){return location.hash==='#display';}
+// キーなしのURLは常にお客様表示。スタッフは #display を付けると表示画面を確認できる
+function isDisplayMode(){return !IS_STAFF||location.hash==='#display';}
+// お客様用URL＝キーも # も付けないURL（ここから販売画面へはたどれない）
+function displayUrl(){return location.href.split(/[?#]/)[0];}
 
 function _applyDisplayState(pn, extra={}){
   // pn = pendingNums array (called & not received)
@@ -1076,8 +1175,9 @@ function _applyDisplayState(pn, extra={}){
     const prevNums=extra.prevNums||[];
     // font size: scale down with more numbers
     const n=pn.length;
-    const numFs=n===1?'min(42vw,240px)':n===2?'min(22vw,160px)':'min(16vw,110px)';
-    const banFs=n===1?'min(8vw,52px)':n===2?'min(5vw,32px)':'min(4vw,24px)';
+    // 呼び出し中が多いときも画面からはみ出さないよう段階的に縮める
+    const numFs=n===1?'min(42vw,240px)':n===2?'min(22vw,160px)':n<=8?'min(16vw,110px)':n<=15?'min(11vw,13vh,80px)':n<=30?'min(8vw,9vh,56px)':'min(6vw,6vh,40px)';
+    const banFs=n===1?'min(8vw,52px)':n===2?'min(5vw,32px)':n<=8?'min(4vw,24px)':n<=15?'min(3vw,18px)':'min(2.4vw,14px)';
     // remember which were already shown (no re-animation)
     const existing=new Set([...numsWrap.querySelectorAll('.disp-num')].map(e=>e.dataset.num));
     numsWrap.innerHTML=pn.map(num=>{
@@ -1099,7 +1199,8 @@ function _applyDisplayState(pn, extra={}){
     const count=extra.uncalledCount;
     if(count>0){
       let txt=`<span>${count}組</span>が待ち中`;
-      if(extra.avgMin!=null){txt+=` ／ 予想 約<span>${count*extra.avgMin}分</span>`;}
+      // お客様向けは分単位に切り上げて表示
+      if(extra.avgMin!=null){txt+=` ／ 予想 約<span>${Math.ceil(count*extra.avgMin)}分</span>`;}
       waitEl.innerHTML=txt;waitEl.hidden=false;
     }else{waitEl.hidden=true;}
   }
@@ -1128,24 +1229,14 @@ function showDisplay(){
   renderDisplay();
 }
 
-function exitDisplay(){
-  document.getElementById('page-display').classList.remove('on');
-  document.querySelector('.app-hd').hidden=false;
-  document.querySelector('.nav').hidden=false;
-  document.getElementById('page-sell').classList.add('on');
-  history.replaceState(null,'',location.pathname+location.search);
-}
-
 function openDisplayTab(){
-  const url=location.href.split('#')[0]+'#display';
-  window.open(url,'_blank');
+  window.open(displayUrl(),'_blank');
 }
 
 function copyDisplayUrl(){
-  const url=location.href.split('#')[0]+'#display';
-  navigator.clipboard.writeText(url)
+  navigator.clipboard.writeText(displayUrl())
     .then(()=>showToast('✅ URLをコピーしました'))
-    .catch(()=>showToast('コピー失敗。URLに #display を付けて開いてください'));
+    .catch(()=>showToast('コピー失敗。URLの「?」から後ろを消して開いてください'));
 }
 
 function initDb(){
@@ -1172,26 +1263,40 @@ function initDb(){
       });
     }else{
       // スタッフ画面：sales をリアルタイム同期
+      let firstSnap=true;
       _fbSalesRef.on('value',snap=>{
         const d=snap.val();
+        const wasFirst=firstSnap;firstSnap=false;
         if(d===null){
+          // 初回でFirebaseが空 → 手元のデータをアップロード（消さない）
+          if(wasFirst){if(sales.length)saveS();return;}
           // 全リセットされた場合
-          if(sales.length>0){sales=[];try{localStorage.setItem('cb_s','[]');}catch(_){}renderQueue();renderPsCard();syncDisplayState();}
+          if(sales.length>0){sales=[];try{localStorage.setItem('cb_s','[]');}catch(_){}renderQueue();renderCart();renderPsCard();syncDisplayState();}
           return;
         }
-        // Firebase は property をアルファベット順で返すため JSON 比較不可。
-        // 代わりに「num・called・received の組み合わせ」で差分を検出する
+        // 旧形式（番号キー・idなし）のデータにはidを付けて書き直す
+        let needRewrite=false;
         const arr=Object.values(d)
           .filter(s=>s&&Array.isArray(s.items))  // 不正なレコードを除外
+          .map(s=>{if(!s.id){needRewrite=true;return {...s,id:saleId(s)};}return s;})
           .sort((a,b)=>(b.ts||0)-(a.ts||0));
-        const key=a=>a.map(s=>`${s.num},${s.called?1:0},${s.received?1:0},${(s.items||[]).length}`).join('|');
-        if(key(arr)===key(sales))return; // 変化なし（自己エコー等）
+        // Firebase は property をアルファベット順で返すため JSON 比較不可。
+        // 代わりに「id・called・received の組み合わせ」で差分を検出する
+        const key=a=>a.map(s=>`${s.id},${s.called?1:0},${s.received?1:0},${(s.items||[]).length}`).join('|');
+        if(!needRewrite&&key(arr)===key(sales))return; // 変化なし（自己エコー等）
         sales=arr;
-        try{localStorage.setItem('cb_s',JSON.stringify(sales));}catch(_){}
+        if(needRewrite)saveS();
+        else try{localStorage.setItem('cb_s',JSON.stringify(sales));}catch(_){}
         // 描画エラーで syncDisplayState が止まらないよう個別にtry/catch
         try{renderQueue();}catch(e){console.warn('renderQueue error',e);}
+        try{renderCart();}catch(e){console.warn('renderCart error',e);}
         try{renderPsCard();}catch(e){console.warn('renderPsCard error',e);}
         syncDisplayState();
+      });
+      // 番号カウンターを購読（注文欄・確認画面の番号を実際の採番と揃える）
+      _fbCounterRef.on('value',snap=>{
+        _fbCounter=snap.val()||0;
+        try{renderCart();renderQueue();}catch(_){}
       });
       // /state を購読して lastCalled をスタッフ端末間で同期
       _db.on('value',snap=>{
@@ -1223,13 +1328,13 @@ if(isDisplayMode()){
   initDb();
 }else{
   renderProducts();renderCart();renderQueue();renderPsCard();
+  document.getElementById('staff-url').textContent=`${displayUrl()}?staff=${STAFF_KEY}`;
   initDb();
 }
 
-window.addEventListener('hashchange',()=>{
-  if(isDisplayMode()){showDisplay();initDb();}
-  else exitDisplay();
-});
+// スタッフ画面⇔表示画面の切替は、Firebaseの購読をやり直すため再読込する
+// （同じページで initDb() を2回呼ぶと initializeApp が失敗する）
+window.addEventListener('hashchange',()=>location.reload());
 </script>
 
 </body>
