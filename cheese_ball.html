@@ -118,10 +118,6 @@ body{
 .q-row-wait{font-size:12px;font-weight:700;color:var(--fg-2);font-variant-numeric:tabular-nums}
 .q-row-wait.long{color:var(--long)} /* 10分以上待たせている */
 .q-row-ps{font-size:12px;font-weight:700;color:var(--ps);background:var(--ps-lt);border-radius:5px;padding:2px 7px}
-/* おまけは作り忘れ防止のため目立たせる */
-.q-bonus{display:inline-block;font-size:14px;font-weight:900;line-height:1.2;color:#2A1A00;background:#FF9F1C;border-radius:6px;padding:2px 8px;white-space:nowrap;box-shadow:0 0 0 2px rgba(255,159,28,.35);font-variant-numeric:tabular-nums}
-.q-now-row .q-bonus{font-size:15px}
-.ov-bonus-row{display:flex;justify-content:space-between;align-items:center;font-size:16px;font-weight:900;color:#2A1A00;background:#FF9F1C;border-radius:8px;padding:6px 10px;margin-top:4px}
 .queue-empty{text-align:center;padding:18px 0 6px;font-size:14px;color:var(--fg-2)}
 .q-now-called{background:var(--acc-lt);border:1.5px solid var(--accent);border-radius:var(--rsm);padding:9px 13px;display:flex;flex-direction:column;gap:7px;flex-shrink:0;max-height:50%;overflow-y:auto}
 .q-now-label{font-size:13px;font-weight:900;letter-spacing:.06em;color:var(--acc-text)}
@@ -355,7 +351,7 @@ else document.documentElement.dataset.theme='light';
       <span>注文内容</span>
       <span class="order-badge" id="order-badge"></span>
     </div>
-    <!-- 商品が多いときは商品の行だけスクロール（見出し・前売り券・おまけ・合計は常に見える） -->
+    <!-- 商品が多いときは商品の行だけスクロール（見出し・前売り券・合計は常に見える） -->
     <div class="cart-body" id="cart-rows"></div>
     <div class="ps-cart-row" id="ps-cart-row" hidden>
       <div style="font-size:16px">🎟</div>
@@ -365,15 +361,6 @@ else document.documentElement.dataset.theme='light';
         <button class="ps-s-btn" id="ps-minus" onclick="changePsTickets(-1)">−</button>
         <div class="ps-s-n" id="ps-n">0</div>
         <button class="ps-s-btn" id="ps-plus" onclick="changePsTickets(1)">＋</button>
-      </div>
-    </div>
-    <div class="ps-cart-row" id="bonus-cart-row" hidden>
-      <div style="font-size:16px">🎁</div>
-      <div class="ps-cart-lbl">おまけ（個）</div>
-      <div class="ps-stepper">
-        <button class="ps-s-btn" id="bonus-minus" onclick="changeBonus(-1)">−</button>
-        <div class="ps-s-n" id="bonus-n">0</div>
-        <button class="ps-s-btn" id="bonus-plus" onclick="changeBonus(1)">＋</button>
       </div>
     </div>
     <div class="cart-foot">
@@ -429,16 +416,6 @@ else document.documentElement.dataset.theme='light';
         <div class="setting-desc">払い戻した前売り券の枚数</div>
       </div>
       <input class="setting-input" id="ps-ref-n" type="number" min="0" max="9999" inputmode="numeric" onchange="setRefund(this.value)">
-    </div>
-    <div class="setting-row">
-      <div class="setting-info">
-        <div class="setting-name">おまけの初期値（1枚あたり）</div>
-        <div class="setting-desc">前売り券を使うと「枚数×この個数」が自動で入ります。注文ごとに注文欄の「おまけ」で増減できます</div>
-      </div>
-      <div style="display:flex;gap:6px;align-items:center">
-        <input class="setting-input" type="number" min="0" max="99" step="1" inputmode="numeric" id="psbonus-input" disabled style="opacity:.5" onchange="confirmPsBonus(this.value)">
-        <button id="psbonus-lock-btn" class="btn btn-ghost" style="padding:6px 10px;font-size:13px;white-space:nowrap" onclick="unlockPsBonus()">変更</button>
-      </div>
     </div>
   </div>
   <div class="sec">Excel連携</div>
@@ -545,14 +522,13 @@ else document.documentElement.dataset.theme='light';
 //  4. 下の {} の中身を置き換えて保存
 // ════════════════════════════════════════════════════════════
 const FIREBASE_CONFIG = {
-  apiKey: "AIzaSyBs04J5hDti2ms356ldsOGO3A5PgV8pCek",
-  authDomain: "kys5i-d7d3c.firebaseapp.com",
-  databaseURL: "https://kys5i-d7d3c-default-rtdb.firebaseio.com",
-  projectId: "kys5i-d7d3c",
-  storageBucket: "kys5i-d7d3c.firebasestorage.app",
-  messagingSenderId: "406310385226",
-  appId: "1:406310385226:web:637477ea3e7cb22d8618b3",
-  measurementId: "G-09BX1B3CF1"
+  // apiKey: "AIzaSy...",
+  // authDomain: "your-project.firebaseapp.com",
+  // databaseURL: "https://your-project-default-rtdb.firebaseio.com",
+  // projectId: "your-project",
+  // storageBucket: "your-project.appspot.com",
+  // messagingSenderId: "123456789",
+  // appId: "1:123456789:web:abc123"
 };
 const PRODUCTS=[
   {id:'plain',   name:'プレーン',  price:300,color:'#E6B400'},
@@ -561,7 +537,7 @@ const PRODUCTS=[
   {id:'mentai',  name:'明太マヨ', price:350,color:'#E060A0'},
 ];
 const PS_PRICE=300;
-let cart={},sales=[],cfg={},psTickets=0,cartBonus=0,_cb=null,_db=null;
+let cart={},sales=[],cfg={},psTickets=0,_cb=null,_db=null;
 let _fbSalesRef=null,_fbCounterRef=null,_fbCounter=null,_saleBusy=false;
 
 // 番号は使い回すので、保存キーには番号ではなく一意のIDを使う
@@ -575,7 +551,6 @@ function load(){
   if(cfg.numMax==null)     cfg.numMax=99;
   if(cfg.lastCalled==null) cfg.lastCalled=[];
   if(cfg.waitMin==null)    cfg.waitMin=0.5; // 既定は1人30秒
-  if(cfg.psBonus==null)    cfg.psBonus=0;   // 前売り券1枚あたりのおまけ個数
   let ch=false;
   sales.forEach((s,i)=>{
     if(s.called==null){s.called=true;ch=true;}
@@ -623,9 +598,6 @@ function discountFor(qty,n){
   return flat.slice(0,n).reduce((s,p)=>s+p,0);
 }
 function psDiscount(){return discountFor(cart,psTickets);}
-// 前売り券のおまけ個数（会計時の値を注文に保存し、あとで設定を変えても注文側は変わらない）
-function psBonusFor(n){return n*(cfg.psBonus||0);}
-function bonusTag(s){return s.bonus>0?` <span class="q-bonus">🎁 おまけ +${s.bonus}個</span>`:'';}
 function cartTotal(){return Math.max(0,PRODUCTS.reduce((s,p)=>s+(cart[p.id]||0)*p.price,0)-psDiscount());}
 function totalCartItems(){return Object.values(cart).reduce((s,v)=>s+v,0);}
 
@@ -642,10 +614,6 @@ function goPage(id){
     winp.value=cfg.waitMin||0;winp.disabled=true;winp.style.opacity='.5';
     const wbtn=document.getElementById('waitmin-lock-btn');
     wbtn.textContent='変更';wbtn.onclick=unlockWaitMin;
-    const binp=document.getElementById('psbonus-input');
-    binp.value=cfg.psBonus||0;binp.disabled=true;binp.style.opacity='.5';
-    const bbtn=document.getElementById('psbonus-lock-btn');
-    bbtn.textContent='変更';bbtn.onclick=unlockPsBonus;
   }
 }
 
@@ -681,7 +649,7 @@ function askRefundPs(){
     cfg.psRefunds=(cfg.psRefunds||0)+1;saveCfg();
     // 会計中のカートで使う枚数が残りを超えたら減らす
     const pst=Math.min(psTickets,psRemain());
-    if(pst!==psTickets){psTickets=pst;cartBonus=psBonusFor(pst);}
+    psTickets=pst;
     renderPsCard();renderCart();
     showToast(`🎟 前売り券を1枚返金しました（${fmt(PS_PRICE)}）`);
   };
@@ -765,7 +733,7 @@ function renderQueue(){
     nowEl.innerHTML=`<div class="q-now-label">📢 呼び出し中（${calledPending.length}組）</div>`+
       calledPending.map(s=>`<div class="q-now-row">
         <div class="q-now-numwrap"><div class="q-now-val">${s.num}</div><div class="q-now-ban">番</div></div>
-        <div class="q-now-detail">${fl2(s)}${s.psTickets>0?` <span class="q-row-ps">🎟${s.psTickets>1?' ×'+s.psTickets:''}</span>`:''}${bonusTag(s)}</div>
+        <div class="q-now-detail">${fl2(s)}${s.psTickets>0?` <span class="q-row-ps">🎟${s.psTickets>1?' ×'+s.psTickets:''}</span>`:''}</div>
         <button class="q-recv-btn" onclick="markReceived(${s.num})">✓ 受け取り済</button>
       </div>`).join('');
   }else{nowEl.hidden=true;nowEl.innerHTML='';}
@@ -790,7 +758,7 @@ function renderQueue(){
       <div class="q-row-info">
         <div class="q-row-items">${fl(s)}</div>
         <div class="q-row-meta">
-          ${s.psTickets>0?`<span class="q-row-ps">🎟 前売り${s.psTickets>1?' ×'+s.psTickets:''}</span>`:''}${bonusTag(s)}
+          ${s.psTickets>0?`<span class="q-row-ps">🎟 前売り${s.psTickets>1?' ×'+s.psTickets:''}</span>`:''}
           ${w?`<span class="q-row-wait${Date.now()-s.ts>=600000?' long':''}">⏱ ${w}待ち</span>`:''}
         </div>
       </div>
@@ -818,21 +786,18 @@ function changeQty(id,d){
   const n=(cart[id]||0)+d;
   if(n<=0){delete cart[id];}else{cart[id]=n;}
   const pst=Math.min(psTickets,totalCartItems());
-  if(pst!==psTickets){psTickets=pst;cartBonus=psBonusFor(pst);}
+  psTickets=pst;
   renderCart();
 }
-function clearCart(){cart={};psTickets=0;cartBonus=0;renderCart();}
+function clearCart(){cart={};psTickets=0;renderCart();}
 function changePsTickets(d){
   if(d>0){
     if(psTickets>=totalCartItems())return;
     if(psTickets>=psRemain()){showToast(psRemain()<=0?'前売り券の残りがありません':`前売り券の残りは${psRemain()}枚です`);return;}
   }
   psTickets=Math.max(0,Math.min(totalCartItems(),psTickets+d));
-  cartBonus=psBonusFor(psTickets); // 枚数を変えたらおまけは初期値に戻す
   renderCart();
 }
-// おまけはお客さんごとに違うので注文ごとに増減できる
-function changeBonus(d){cartBonus=Math.max(0,Math.min(99,cartBonus+d));renderCart();}
 
 function renderCart(){
   const items=PRODUCTS.filter(p=>(cart[p.id]||0)>0),n=totalCartItems();
@@ -843,7 +808,6 @@ function renderCart(){
   if(!items.length){
     body.innerHTML='<div class="cart-empty">商品ボタンをタップして追加</div>';
     document.getElementById('ps-cart-row').hidden=true;
-    document.getElementById('bonus-cart-row').hidden=true;
   }else{
     body.innerHTML=items.map(p=>{const q=cart[p.id];return `<div class="cart-row" data-id="${p.id}">
       <span class="cart-dot" style="background:${p.color}"></span>
@@ -861,11 +825,6 @@ function renderCart(){
     document.getElementById('ps-disc').textContent=disc>0?`−${fmt(disc)}`:'';
     document.getElementById('ps-minus').disabled=psTickets<=0;
     document.getElementById('ps-plus').disabled=psTickets>=n||psTickets>=psRemain();
-    // おまけ欄は前売り券を使うときだけ出す
-    document.getElementById('bonus-cart-row').hidden=psTickets<=0;
-    document.getElementById('bonus-n').textContent=cartBonus;
-    document.getElementById('bonus-minus').disabled=cartBonus<=0;
-    document.getElementById('bonus-plus').disabled=cartBonus>=99;
   }
   document.getElementById('cart-total').textContent=fmt(cartTotal());
   document.getElementById('checkout-btn').disabled=n===0||full;
@@ -875,13 +834,12 @@ function openCheckout(){
   if(allNumsFull()){showToast(`全番号使用中（上限 ${cfg.numMax||99}番）。受取済みにしてから登録してください`);return;}
   const num=nextNum(),items=PRODUCTS.filter(p=>(cart[p.id]||0)>0),disc=psDiscount();
   document.getElementById('ov-meta').innerHTML=
-    `<span>整理番号：${num}番</span>${psTickets>0?`<span class="ov-ps-badge">🎟 前売り券 ×${psTickets}${cartBonus>0?`（おまけ +${cartBonus}個）`:''}</span>`:''}`;
+    `<span>整理番号：${num}番</span>${psTickets>0?`<span class="ov-ps-badge">🎟 前売り券 ×${psTickets}</span>`:''}`;
   document.getElementById('ov-items').innerHTML=
     items.map(p=>{const q=cart[p.id];return `<div class="ov-item">
       <span class="ov-item-name">${p.name} × ${q}</span>
       <span class="ov-item-price">${fmt(q*p.price)}</span></div>`;}).join('')+
-    (disc>0?`<div class="ov-disc-row"><span>🎟 前売り割引 ×${psTickets}</span><span>−${fmt(disc)}</span></div>`:'')+
-    (psTickets>0&&cartBonus>0?`<div class="ov-bonus-row"><span>🎁 おまけ</span><span>+${cartBonus}個</span></div>`:'');
+    (disc>0?`<div class="ov-disc-row"><span>🎟 前売り割引 ×${psTickets}</span><span>−${fmt(disc)}</span></div>`:'');
   document.getElementById('ov-total').textContent=fmt(cartTotal());
   document.getElementById('ov-checkout').classList.add('on');
 }
@@ -898,7 +856,7 @@ async function doCompleteSale(){
   if(!totalCartItems()){closeOv('ov-checkout');return;}
   if(psTickets>psRemain()){showToast(`前売り券の残りは${psRemain()}枚です`);return;}
   // 待っている間にカートが変わっても影響しないよう先に確定させる
-  const pst=psTickets,disc=psDiscount(),bonus=pst>0?cartBonus:0;
+  const pst=psTickets,disc=psDiscount();
   const items=PRODUCTS.filter(p=>(cart[p.id]||0)>0).map(p=>({id:p.id,name:p.name,qty:cart[p.id],price:p.price}));
   const total=cartTotal();
   // 番号をFirebase transactionでアトミックに取得（複数端末の衝突防止）
@@ -922,9 +880,9 @@ async function doCompleteSale(){
   if(num==null){showToast(`全番号使用中（上限 ${mx}番）`);return;}
   const now=new Date(),ts=now.getTime();
   const time=`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-  const sale={id:saleId({ts,num}),num,time,items,total,psTickets:pst,discount:disc,bonus,called:false,received:false,ts};
+  const sale={id:saleId({ts,num}),num,time,items,total,psTickets:pst,discount:disc,called:false,received:false,ts};
   sales.unshift(sale);
-  saveS([sale]);closeOv('ov-checkout');cart={};psTickets=0;cartBonus=0;
+  saveS([sale]);closeOv('ov-checkout');cart={};psTickets=0;
   syncDisplayState();
   renderCart();renderQueue();renderPsCard();
   showToast(`${num}番 会計完了！ ${fmt(total)}${pst>0?' 🎟':''}`);
@@ -962,21 +920,6 @@ function confirmWaitMin(v){
   btn.textContent='変更';btn.onclick=unlockWaitMin;
   showToast(n===0?'待ち時間を自動計算に設定しました':'待ち時間を'+n+'分/人に設定しました');
 }
-function unlockPsBonus(){
-  const inp=document.getElementById('psbonus-input');
-  const btn=document.getElementById('psbonus-lock-btn');
-  inp.disabled=false;inp.style.opacity='1';inp.focus();inp.select();
-  btn.textContent='確定';btn.onclick=()=>confirmPsBonus(inp.value);
-}
-function confirmPsBonus(v){
-  const n=Math.max(0,Math.min(99,parseInt(v)||0));
-  cfg.psBonus=n;saveCfg();renderCart();
-  const inp=document.getElementById('psbonus-input');
-  const btn=document.getElementById('psbonus-lock-btn');
-  inp.value=n;inp.disabled=true;inp.style.opacity='.5';
-  btn.textContent='変更';btn.onclick=unlockPsBonus;
-  showToast(n===0?'前売り券のおまけをなしにしました':'前売り券1枚につき +'+n+'個に設定しました');
-}
 
 function askReset(type){
   document.getElementById('confirm-msg').innerHTML=type==='sales'
@@ -984,10 +927,10 @@ function askReset(type){
     :'全データ（売上・前売り券・設定）を削除します。<br>この操作は取り消せません。';
   _cb=()=>{
     if(type==='sales'){sales=[];cfg.lastCalled=[];}
-    else{sales=[];cfg={psIssued:30,psRefunds:0,numMax:99,waitMin:0.5,psBonus:0,lastCalled:[]};}
+    else{sales=[];cfg={psIssued:30,psRefunds:0,numMax:99,waitMin:0.5,lastCalled:[]};}
     // 番号も1番から振り直す
     if(_fbCounterRef){_fbCounterRef.set(0).catch(()=>{});_fbCounter=0;}
-    cart={};psTickets=0;cartBonus=0;saveS();saveCfg();
+    cart={};psTickets=0;saveS();saveCfg();
     syncDisplayState(); // お客様表示も空にする
     renderProducts();renderCart();renderQueue();renderPsCard();
     showToast('リセットしました');
@@ -1012,12 +955,12 @@ async function exportExcel(){
   // 列: A=番号 B=時刻 C=プレーン D=のり塩 E=ケチャップ F=明太マヨ G=前売り券(使用) H=当日支払(円) I=呼出済
   // K〜L列: 集計エリア（前売り券売上は発行時計上の固定値）
   // A〜I列：データ本体（合計行なし）
-  const hdr=['番号','時刻','プレーン','のり塩','ケチャップ','明太マヨ','前売り券(使用)','当日支払(円)','呼出済','おまけ(個)'];
+  const hdr=['番号','時刻','プレーン','のり塩','ケチャップ','明太マヨ','前売り券(使用)','当日支払(円)','呼出済'];
   const rows=[hdr];
   for(const s of sorted){
     const qty={};for(const it of s.items)qty[it.id]=it.qty;
     rows.push([s.num,s.time,qty['plain']||0,qty['norishio']||0,qty['ketchup']||0,qty['mentai']||0,
-      s.psTickets||0,s.total,s.called?'済':'未',s.bonus||0]);
+      s.psTickets||0,s.total,s.called?'済':'未']);
   }
   const ws=XLSX.utils.aoa_to_sheet(rows);
   // K〜L列：固定集計エリア（行を追加しても壊れない大きめ範囲）
@@ -1042,8 +985,6 @@ async function exportExcel(){
     ['前売り券純売上（円）', psRev],
     ['当日現金売上（円）',{f:`SUM(H2:H${R})`}],
     ['合計売上（円）',    {f:`L16+L17`}],
-    ['',''],
-    ['前売り券おまけ（個）', sales.reduce((n,s)=>n+(s.bonus||0),0)],
   ];
   summary.forEach(([label,val],i)=>{
     const kCell=XLSX.utils.encode_cell({c:10,r:i});
@@ -1056,7 +997,7 @@ async function exportExcel(){
   });
   const maxR=Math.max(rows.length,summary.length);
   ws['!ref']=`A1:L${maxR}`;
-  ws['!cols']=[{wch:6},{wch:7},{wch:9},{wch:9},{wch:10},{wch:10},{wch:12},{wch:11},{wch:7},{wch:9},{wch:28},{wch:12}];
+  ws['!cols']=[{wch:6},{wch:7},{wch:9},{wch:9},{wch:10},{wch:10},{wch:12},{wch:11},{wch:7},{wch:2},{wch:28},{wch:12}];
   // ── 集計シート（販売明細を参照）──
   const ws2=XLSX.utils.aoa_to_sheet([
     ['項目','値'],
@@ -1073,8 +1014,6 @@ async function exportExcel(){
     ['前売り券純売上（円）', psRev],
     ['当日現金売上（円）',             {f:`SUM(販売明細!H2:H${R})`}],
     ['合計売上（円）',                  {f:`B12+B13`}],
-    [],
-    ['前売り券おまけ（個）',           sales.reduce((n,s)=>n+(s.bonus||0),0)],
   ]);
   ws2['!cols']=[{wch:28},{wch:12}];
   // ── 設定シート（読込時に4〜7行目のB列を読む）──
@@ -1085,7 +1024,6 @@ async function exportExcel(){
     ['前売り券返金枚数',cfg.psRefunds],
     ['番号の上限',cfg.numMax],
     ['予想待ち時間（分/人、0=自動）',cfg.waitMin||0],
-    ['前売り券のおまけ（個/枚）',cfg.psBonus||0],
   ]);
   ws3['!cols']=[{wch:28},{wch:10}];
   const wb=XLSX.utils.book_new();
@@ -1123,13 +1061,13 @@ async function exportExcel(){
 }
 function exportTSV(){
   if(!sales.length){showToast('データがありません');return;}
-  const hdr=['番号','時刻','プレーン','のり塩','ケチャップ','明太マヨ','前売り券','割引','合計','呼出済','備考','おまけ'];
+  const hdr=['番号','時刻','プレーン','のり塩','ケチャップ','明太マヨ','前売り券','割引','合計','呼出済','備考'];
   const sorted=[...sales].reverse(); // 会計順（番号は使い回すので番号順にしない）
   const rows=[hdr];
   for(const s of sorted){
     const qty={};for(const it of s.items)qty[it.id]=it.qty;
     rows.push([s.num,s.time,qty['plain']||0,qty['norishio']||0,qty['ketchup']||0,qty['mentai']||0,
-      s.psTickets||0,s.discount||0,s.total,s.called?'済':'','',s.bonus||0]);
+      s.psTickets||0,s.discount||0,s.total,s.called?'済':'','']);
   }
   const tsv=rows.map(r=>r.join('\t')).join('\n');
   navigator.clipboard.writeText(tsv)
@@ -1171,21 +1109,13 @@ function importExcel(input){
         if(pr!=null)cfg.psRefunds=pr;
         if(nm!=null)cfg.numMax=Math.min(999,nm);
         if(wm!=null)cfg.waitMin=Math.min(60,wm);
-        const pb=tryNum(7,1,0);
-        if(pb!=null)cfg.psBonus=Math.min(99,pb);
         saveCfg();
       }
       // Load sales
       // 「販売入力」＝テキストコピーを貼ったシート（H=割引, J=呼出済）
       // 「販売明細」＝このアプリで書き出したExcel（H=当日支払, I=呼出済、割引列なし）
-      let ws=wb.Sheets['販売入力'],discCol=7,calledCol=9,bonusCol=11;
-      if(!ws&&wb.Sheets['販売明細']){ws=wb.Sheets['販売明細'];discCol=-1;calledCol=8;bonusCol=9;}
-      // おまけ列があればその値、なければ（古いファイル）枚数×初期値
-      const readBonus=(row,pst)=>{
-        if(pst<=0)return 0;
-        const v=parseInt(row[bonusCol]);
-        return isNaN(v)?psBonusFor(pst):Math.max(0,Math.min(99,v));
-      };
+      let ws=wb.Sheets['販売入力'],discCol=7,calledCol=9;
+      if(!ws&&wb.Sheets['販売明細']){ws=wb.Sheets['販売明細'];discCol=-1;calledCol=8;}
       if(!ws){showToast('「販売入力」または「販売明細」シートが見つかりません');return;}
       const data=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
       let start=0;
@@ -1211,7 +1141,7 @@ function importExcel(input){
         if(typeof row[1]==='number'&&row[1]<1){const m=Math.round(row[1]*1440);time=`${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;}
         const tm=/^(\d{1,2}):(\d{2})/.exec(time);
         if(tm){const d=new Date();d.setHours(+tm[1],+tm[2],0,newSales.length%1000);ts=d.getTime();}
-        newSales.push({id:`s_imp${i}_${num}`,num,time,items,total,psTickets:pst,discount:disc,bonus:readBonus(row,pst),called,received:called,...(ts?{ts}:{})});
+        newSales.push({id:`s_imp${i}_${num}`,num,time,items,total,psTickets:pst,discount:disc,called,received:called,...(ts?{ts}:{})});
       }
       if(!newSales.length){showToast('読み込めるデータがありませんでした');return;}
       sales=newSales.reverse(); // シートの行順＝会計順。新しい順に並べ替える
