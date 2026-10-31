@@ -65,6 +65,11 @@ body{
   font-family:'Noto Sans JP',sans-serif;
 }
 .nav-tab.on{color:var(--fg);border-bottom-color:var(--accent)}
+/* 呼び出し専用端末はタブを出さない（受付や設定に行けない） */
+.role-call .nav{display:none}
+/* 注文受付と呼び出しは同じ画面の片側ずつを表示する */
+#page-sell.mode-order .sell-left,#page-sell.mode-call .sell-right{display:none}
+#page-sell.mode-order .sell-right,#page-sell.mode-call .sell-left{width:100%;max-width:980px;margin:0 auto;padding-left:0;padding-right:0}
 .page{display:none;flex-direction:column;gap:11px;padding-block:13px}
 .page.on{display:flex}
 #page-sell.on{flex-direction:row;gap:0;padding:0;flex:1;min-height:0;overflow:hidden}
@@ -90,6 +95,7 @@ body{
   .sell-right{overflow:visible;padding:12px 0 0}
   .sell-right .btn-row{position:sticky;bottom:0;background:var(--bg);padding:8px 0 max(10px,env(safe-area-inset-bottom,10px));margin-top:0}
   .q-recv-btn{padding:8px 10px;font-size:13px}
+  #page-sell.mode-call .sell-left{height:auto;flex:1;padding-bottom:12px}
 }
 .sec{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--fg-2)}
 
@@ -113,11 +119,17 @@ body{
 .q-row:first-child .q-row-num{font-size:32px}
 .q-row-ban{font-size:12px;font-weight:700;color:var(--fg-2);padding-bottom:2px}
 .q-row-info{flex:1;min-width:0}
+/* 好きな順番で呼び出すためのボタン */
+.q-call-one{flex-shrink:0;padding:10px 16px;border-radius:8px;border:1.5px solid var(--accent);background:var(--bg-card);color:var(--acc-text);font-size:15px;font-weight:900;cursor:pointer;font-family:inherit;white-space:nowrap}
+.q-call-one:active{transform:scale(.95)}
 .q-row-items{font-size:15px;font-weight:700;color:var(--fg);line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .q-row-meta{display:flex;gap:6px;align-items:center;margin-top:2px;flex-wrap:wrap}
 .q-row-wait{font-size:12px;font-weight:700;color:var(--fg-2);font-variant-numeric:tabular-nums}
 .q-row-wait.long{color:var(--long)} /* 10分以上待たせている */
 .q-row-ps{font-size:12px;font-weight:700;color:var(--ps);background:var(--ps-lt);border-radius:5px;padding:2px 7px}
+/* おまけは作り忘れ防止のため目立たせる */
+.q-bonus{display:inline-block;font-size:14px;font-weight:900;line-height:1.2;color:#2A1A00;background:#FF9F1C;border-radius:6px;padding:2px 8px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.q-now-row .q-bonus{font-size:15px}
 .queue-empty{text-align:center;padding:18px 0 6px;font-size:14px;color:var(--fg-2)}
 .q-now-called{background:var(--acc-lt);border:1.5px solid var(--accent);border-radius:var(--rsm);padding:9px 13px;display:flex;flex-direction:column;gap:7px;flex-shrink:0;max-height:50%;overflow-y:auto}
 .q-now-label{font-size:13px;font-weight:900;letter-spacing:.06em;color:var(--acc-text)}
@@ -228,38 +240,23 @@ html.disp-mode body{background:#FFFBF0}
 .dw-lbl{font-size:clamp(11px,1.8vw,16px);font-weight:700;letter-spacing:.12em;color:#5C544A}
 .dw-val{font-size:clamp(28px,min(6vw,8vh),56px);font-weight:900;line-height:1.15;color:#9A6B00;font-variant-numeric:tabular-nums}
 .dw-val small{font-size:.42em;font-weight:700;color:#5C544A;margin:0 2px}
+.disp-bottom{margin-top:clamp(12px,3vh,26px);display:flex;flex-wrap:wrap;justify-content:center;align-items:stretch;gap:clamp(10px,3vw,28px)}
+.disp-bottom>.disp-wait-info{margin-top:0}
+/* 横幅がある画面では待ち情報と投票を必ず1列に（高さを節約） */
+@media(min-width:760px){.disp-bottom{flex-wrap:nowrap}.disp-bottom>.disp-wait-info{flex-wrap:nowrap}.disp-vote{min-width:0}}
+.disp-vote{display:flex;align-items:center;gap:clamp(10px,2vw,18px);background:#fff;border:2px solid #FF9F1C;border-radius:16px;padding:clamp(8px,1.5vh,14px) clamp(12px,2.5vw,22px);box-shadow:0 2px 12px rgba(255,159,28,.18)}
+a.disp-vote{text-decoration:none;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .08s,box-shadow .15s}
+a.disp-vote:hover{box-shadow:0 4px 18px rgba(255,159,28,.35)}
+a.disp-vote:active{transform:scale(.97)}
+.dv-go{flex-shrink:0;align-self:center;background:#FF9F1C;color:#2A1A00;font-size:clamp(14px,2vw,20px);font-weight:900;border-radius:12px;padding:clamp(8px,1.4vh,12px) clamp(14px,2vw,22px);white-space:nowrap}
+.dv-msg{font-size:clamp(18px,min(2.8vw,4.5vh),32px);font-weight:900;color:#C25E00;line-height:1.25}
+.dv-sub{font-size:clamp(11px,1.6vw,15px);font-weight:700;color:#5C544A;margin-top:4px}
 .disp-status{
   position:fixed;bottom:max(18px,env(safe-area-inset-bottom,18px));
   left:50%;transform:translateX(-50%);
   font-size:11px;color:#9A928A;letter-spacing:.05em;white-space:nowrap;
 }
 
-/* Stats */
-.kpi-row{display:grid;grid-template-columns:1fr 1fr;gap:9px}
-.kpi{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r);padding:13px}
-.kpi-lbl{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--fg-2);margin-bottom:5px}
-.kpi-val{font-size:26px;font-weight:900;font-variant-numeric:tabular-nums;line-height:1}
-.kpi-sub{font-size:11px;color:var(--fg-2);margin-top:3px;font-variant-numeric:tabular-nums}
-.kpi-bk{font-size:10px;color:var(--fg-2);margin-top:4px;font-variant-numeric:tabular-nums;line-height:1.7}
-.kpi-bk span{color:var(--ps);font-weight:700}
-.flavor-row{display:flex;align-items:center;padding:10px 13px;gap:9px;border-bottom:1px solid var(--border)}
-.flavor-row:last-child{border-bottom:none}
-.fl-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
-.fl-name{flex:1;font-weight:600;font-size:13px}
-.fl-bar-wrap{flex:0 0 44px;height:5px;background:var(--bg-muted);border-radius:3px;overflow:hidden}
-.fl-bar{height:100%;border-radius:3px}
-.fl-nums{text-align:right;min-width:68px}
-.fl-cnt{font-size:11px;color:var(--fg-2);font-variant-numeric:tabular-nums}
-.fl-amt{font-size:13px;font-weight:700;font-variant-numeric:tabular-nums}
-.hist-wrap{max-height:190px;overflow-y:auto}
-.hist-row{display:flex;align-items:flex-start;padding:7px 13px;gap:5px;font-size:12px;border-bottom:1px solid var(--border)}
-.hist-row:last-child{border-bottom:none}
-.hist-num{font-weight:900;color:var(--accent);min-width:28px;font-variant-numeric:tabular-nums;flex-shrink:0}
-.hist-ps{font-size:9px;background:var(--ps-lt);color:var(--ps);border-radius:3px;padding:1px 4px;font-weight:700;flex-shrink:0;align-self:center}
-.hist-time{color:var(--fg-2);white-space:nowrap;min-width:36px;font-variant-numeric:tabular-nums;flex-shrink:0}
-.hist-desc{flex:1;min-width:0;line-height:1.5}
-.hist-amt{font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums}
-.hist-empty{padding:18px 13px;text-align:center;color:var(--fg-2);font-size:13px}
 
 /* Settings */
 .setting-row{display:flex;align-items:center;padding:12px 13px;gap:10px;border-bottom:1px solid var(--border)}
@@ -268,6 +265,13 @@ html.disp-mode body{background:#FFFBF0}
 .setting-name{font-size:14px;font-weight:700}
 .setting-desc{font-size:12px;color:var(--fg-2);margin-top:2px}
 .setting-input{width:72px;padding:7px 4px;border:2px solid var(--border);border-radius:var(--rsm);text-align:center;font-size:16px;font-weight:700;font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--fg);font-variant-numeric:tabular-nums}
+.switch{position:relative;width:56px;height:32px;flex-shrink:0;cursor:pointer}
+.switch input{opacity:0;width:0;height:0;position:absolute}
+.switch span{position:absolute;inset:0;background:var(--border);border-radius:16px;transition:background .15s}
+.switch span::after{content:'';position:absolute;top:3px;left:3px;width:26px;height:26px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .15s}
+.switch input:checked+span{background:var(--accent)}
+.switch input:checked+span::after{transform:translateX(24px)}
+.flat-banner{background:var(--accent);color:var(--acc-fg);font-weight:900;font-size:15px;text-align:center;border-radius:var(--rsm);padding:6px 10px}
 .setting-input:focus{outline:none;border-color:var(--accent)}
 .action-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r);padding:13px;display:flex;flex-direction:column;gap:9px}
 .action-title{font-size:12px;font-weight:700;color:var(--fg-2)}
@@ -281,11 +285,35 @@ html.disp-mode body{background:#FFFBF0}
 .overlay-title{font-size:18px;font-weight:900;margin-bottom:3px}
 .overlay-meta{font-size:13px;color:var(--fg-2);margin-bottom:11px;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
 .ov-ps-badge{background:var(--ps-lt);color:var(--ps);border-radius:5px;padding:2px 7px;font-size:11px;font-weight:700}
+.hist-open{margin-left:8px;padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:var(--bg-card);color:var(--fg);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;text-transform:none;letter-spacing:0}
+.hist-box{max-width:520px}
+.hist-list{max-height:55vh;overflow-y:auto;border:1px solid var(--border);border-radius:var(--rsm)}
+.hist-row{display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px solid var(--border)}
+.hist-row:last-child{border-bottom:none}
+.hist-num{font-size:22px;font-weight:900;color:var(--acc-text);min-width:46px;font-variant-numeric:tabular-nums}
+.hist-num small{font-size:11px;color:var(--fg-2)}
+.hist-info{flex:1;min-width:0;font-size:13px;line-height:1.45}
+.hist-info b{font-size:14px}
+.hist-st{font-size:11px;font-weight:700;color:var(--fg-2)}
+.hist-cancel{flex-shrink:0;padding:8px 12px;border-radius:8px;border:1.5px solid var(--warn);background:var(--bg-card);color:var(--warn);font-size:13px;font-weight:900;cursor:pointer;font-family:inherit}
+.hist-empty{padding:18px;text-align:center;color:var(--fg-2);font-size:14px}
+.toast.has-act{pointer-events:auto;padding:8px 8px 8px 20px;display:flex;align-items:center;gap:12px}
+.toast-undo{padding:6px 14px;border-radius:30px;border:none;background:var(--accent);color:var(--acc-fg);font-size:13px;font-weight:900;cursor:pointer;font-family:inherit}
 .overlay-items{display:flex;flex-direction:column;gap:5px;margin-bottom:11px}
 .ov-item{display:flex;justify-content:space-between;font-size:13px}
 .ov-item-name{color:var(--fg-2)}
 .ov-item-price{font-variant-numeric:tabular-nums;font-weight:600}
 .ov-disc-row{display:flex;justify-content:space-between;font-size:13px;color:var(--ps);font-weight:700}
+.ov-bonus-row{display:flex;justify-content:space-between;align-items:center;font-size:16px;font-weight:900;color:#2A1A00;background:#FF9F1C;border-radius:8px;padding:6px 10px;margin-top:4px}
+/* 味ごとのおまけ（注文欄の各行） */
+.cart-bonus{display:flex;align-items:center;gap:4px;background:#FFF3E0;border:1.5px solid #FFC98A;border-radius:18px;padding:2px 4px 2px 8px;flex-shrink:0}
+.cart-bonus.on{background:#FF9F1C;border-color:#FF9F1C}
+.cart-bonus-lbl{font-size:12px;font-weight:900;color:#B35400;white-space:nowrap}
+.cart-bonus.on .cart-bonus-lbl,.cart-bonus.on .cart-bonus-n{color:#2A1A00}
+.cart-bonus-n{font-size:15px;font-weight:900;min-width:16px;text-align:center;color:#B35400;font-variant-numeric:tabular-nums}
+.bonus-btn{width:28px;height:28px;border-radius:50%;border:1.5px solid #E08A1E;background:#fff;color:#B35400;font-size:16px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;font-family:inherit}
+.bonus-btn:disabled{opacity:.35;cursor:default}
+@media(max-width:520px){.cart-row{flex-wrap:wrap}.cart-bonus{order:5;margin-left:20px}}
 .ov-divider{height:1px;background:var(--border);margin:9px 0}
 .ov-total{display:flex;justify-content:space-between;align-items:center}
 .ov-total-lbl{font-weight:700;font-size:14px}
@@ -313,17 +341,20 @@ const IS_STAFF=new URLSearchParams(location.search).get('staff')===STAFF_KEY;
 if(!IS_STAFF)document.documentElement.classList.add('disp-mode');
 // 販売画面は端末がダークモードでも常に明るい配色にする
 else document.documentElement.dataset.theme='light';
+// 受付（注文受付＋設定）と呼び出しは端末ごとに完全に分ける。?view=call で呼び出し専用
+const ROLE=IS_STAFF&&new URLSearchParams(location.search).get('view')==='call'?'call':'order';
+if(ROLE==='call')document.documentElement.classList.add('role-call');
 </script>
 </head>
 <body>
 <div class="app-hd">チーズ<em>ボール</em>　販売管理</div>
 <nav class="nav">
-  <button class="nav-tab on" onclick="goPage('sell')">販売</button>
-  <button class="nav-tab"    onclick="goPage('settings')">設定</button>
+  <button class="nav-tab on" data-page="order" onclick="goPage('order')">注文受付</button>
+  <button class="nav-tab"    data-page="settings" onclick="goPage('settings')">設定</button>
 </nav>
 
 <!-- SELL -->
-<div id="page-sell" class="page on">
+<div id="page-sell" class="page on mode-order">
   <div class="sell-left">
     <div class="queue-panel">
       <div class="queue-hdr">
@@ -344,11 +375,12 @@ else document.documentElement.dataset.theme='light';
     <button class="ps-refund-btn" id="ps-refund-btn" onclick="askRefundPs()">返金</button>
   </div>
 
+  <div class="flat-banner" id="flat-banner" hidden>💴 ただいま全品300円均一</div>
   <div class="prod-grid" id="prod-grid"></div>
 
   <div class="card order-card">
     <div class="card-hd">
-      <span>注文内容</span>
+      <span>注文内容 <button class="hist-open" onclick="openHistory()">🧾 履歴・取り消し</button></span>
       <span class="order-badge" id="order-badge"></span>
     </div>
     <!-- 商品が多いときは商品の行だけスクロール（見出し・前売り券・合計は常に見える） -->
@@ -383,12 +415,9 @@ else document.documentElement.dataset.theme='light';
     <div class="setting-row">
       <div class="setting-info">
         <div class="setting-name">番号の上限</div>
-        <div class="setting-desc">上限に達したら1番から再開します</div>
+        <div class="setting-desc">30番まで使ったら1番から再開します（固定）</div>
       </div>
-      <div style="display:flex;gap:6px;align-items:center">
-        <input class="setting-input" type="number" min="10" max="999" id="nummax-input" disabled style="opacity:.5" onchange="confirmNumMax(this.value)">
-        <button id="nummax-lock-btn" class="btn btn-ghost" style="padding:6px 10px;font-size:13px;white-space:nowrap" onclick="unlockNumMax()">変更</button>
-      </div>
+      <div style="font-size:18px;font-weight:900">30番</div>
     </div>
     <div class="setting-row" style="border-top:1px solid var(--border);margin-top:10px;padding-top:10px">
       <div class="setting-info">
@@ -396,9 +425,19 @@ else document.documentElement.dataset.theme='light';
         <div class="setting-desc">0.5分（30秒）単位。0にすると実績から自動計算します</div>
       </div>
       <div style="display:flex;gap:6px;align-items:center">
-        <input class="setting-input" type="number" min="0" max="60" step="0.5" inputmode="decimal" id="waitmin-input" disabled style="opacity:.5" onchange="confirmWaitMin(this.value)">
+        <input class="setting-input" type="number" min="0" max="60" step="0.5" inputmode="decimal" id="waitmin-input" disabled style="opacity:.5" onkeydown="if(event.key==='Enter')confirmWaitMin(this.value)">
         <button id="waitmin-lock-btn" class="btn btn-ghost" style="padding:6px 10px;font-size:13px;white-space:nowrap" onclick="unlockWaitMin()">変更</button>
       </div>
+    </div>
+  </div>
+  <div class="sec">値段</div>
+  <div class="card">
+    <div class="setting-row">
+      <div class="setting-info">
+        <div class="setting-name">全品300円均一</div>
+        <div class="setting-desc">オンにすると、これからの会計は全部の味が300円になります（会計済みの注文はそのまま）</div>
+      </div>
+      <label class="switch"><input type="checkbox" id="flat-chk" onchange="setFlatPrice(this.checked)"><span></span></label>
     </div>
   </div>
   <div class="sec">前売り券</div>
@@ -434,8 +473,10 @@ else document.documentElement.dataset.theme='light';
   <div class="sec">お客様向け表示</div>
   <div class="action-card">
     <div class="action-title">📺 呼び出し番号の表示画面</div>
-    <div class="xl-note">「次を呼出す」ボタンを押すと番号が自動で更新されます。同じブラウザで別タブを開くか、URLをコピーして別デバイスで開いてください。お客様用のURLからは販売画面に入れません。</div>
-    <div class="xl-note">販売画面のURL（スタッフ端末でブックマークしてください）：<br><span id="staff-url" style="word-break:break-all;font-weight:700;color:var(--fg)"></span></div>
+    <div class="xl-note">「次を呼出す」ボタンを押すと番号が自動で更新されます。今のままでは<b>このブラウザの別タブ</b>でだけ表示できます（「別タブで開く」）。別のスマホやタブレットで表示するには、ファイル内の Firebase 設定が必要です。お客様用のURLからは販売画面に入れません。</div>
+    <div class="xl-note">スタッフ端末用のURL（ブックマークしてください）：<br>
+      注文受付：<span id="staff-url-order" style="word-break:break-all;font-weight:700;color:var(--fg)"></span><br>
+      呼び出し：<span id="staff-url-call" style="word-break:break-all;font-weight:700;color:var(--fg)"></span></div>
     <div class="btn-row">
       <button class="btn btn-ghost" onclick="openDisplayTab()">別タブで開く</button>
       <button class="btn btn-ghost" onclick="copyDisplayUrl()">URLをコピー</button>
@@ -463,7 +504,18 @@ else document.documentElement.dataset.theme='light';
     <div class="disp-next-label">NEXT</div>
     <div class="disp-next-num" id="disp-next-num">—</div>
   </div>
+  <!-- 待ち情報と投票のお願いは、横幅があれば1列に並べる -->
+  <div class="disp-bottom">
   <div id="disp-wait-info" class="disp-wait-info" hidden></div>
+  <!-- 投票のお願い（押すと投票フォームが開く） -->
+  <a class="disp-vote" id="disp-vote" target="_blank" rel="noopener">
+    <div class="dv-text">
+      <div class="dv-msg" id="dv-msg"></div>
+      <div class="dv-sub">ここを押すと投票ページが開きます</div>
+    </div>
+    <span class="dv-go">投票する ›</span>
+  </a>
+  </div>
 
   <div class="disp-status" id="disp-status"></div>
 </div>
@@ -484,6 +536,20 @@ else document.documentElement.dataset.theme='light';
     <div class="overlay-actions">
       <button class="btn btn-ghost" onclick="closeOv('ov-checkout')">戻る</button>
       <button class="btn btn-primary" id="sale-btn" onclick="completeSale()">会計完了</button>
+    </div>
+  </div>
+</div>
+
+<!-- 会計履歴（取り消し用） -->
+<div class="overlay" id="ov-history">
+  <div class="overlay-box hist-box">
+    <div class="overlay-body">
+      <div class="overlay-title">会計履歴</div>
+      <div class="overlay-meta">間違えた会計は「取り消し」できます（新しい順）</div>
+      <div class="hist-list" id="hist-list"></div>
+    </div>
+    <div class="overlay-actions">
+      <button class="btn btn-ghost" onclick="closeOv('ov-history')">閉じる</button>
     </div>
   </div>
 </div>
@@ -538,8 +604,13 @@ const PRODUCTS=[
   {id:'mentai',  name:'明太マヨ', price:350,color:'#E060A0'},
 ];
 const PS_PRICE=300;
-let cart={},sales=[],cfg={},psTickets=0,_cb=null,_db=null;
-let _fbSalesRef=null,_fbCounterRef=null,_fbCounter=null,_saleBusy=false;
+const NUM_MAX=30;     // 整理番号の上限（固定）
+const FLAT_PRICE=300; // 均一価格にしたときの値段
+// お客様画面に出す投票のお願い（押すとこのURLが開く）
+const VOTE_URL='https://docs.google.com/forms/d/e/1FAIpQLSfHe-igw9uEHIDA6WjiFFJ6Oy4rtvxf9x_UvjQ6ARQRtch07A/viewform';
+const VOTE_MSG='📣 5Iに投票よろしく！';
+let cart={},sales=[],cfg={},psTickets=0,cartBonus={},_cb=null,_db=null;
+let _fbSalesRef=null,_fbCounterRef=null,_fbCfgRef=null,_fbCounter=null,_saleBusy=false;
 
 // 番号は使い回すので、保存キーには番号ではなく一意のIDを使う
 function saleId(s,idx){return `s_${s.ts||'i'+(idx||0)}_${s.num}`;}
@@ -549,7 +620,6 @@ function load(){
   try{const v=localStorage.getItem('cb_cfg');if(v)cfg=JSON.parse(v);}catch(e){}
   if(cfg.psIssued==null)   cfg.psIssued=30;
   if(cfg.psRefunds==null)  cfg.psRefunds=0;
-  if(cfg.numMax==null)     cfg.numMax=99;
   if(cfg.lastCalled==null) cfg.lastCalled=[];
   if(cfg.waitMin==null)    cfg.waitMin=0.5; // 既定は1人30秒
   let ch=false;
@@ -560,9 +630,10 @@ function load(){
   if(ch)saveS();
 }
 // changed を渡すとその注文だけFirebaseに書く（複数端末の同時書き込みで消えないように）
-function saveS(changed){
+function saveS(changed,removedIds){
   try{localStorage.setItem('cb_s',JSON.stringify(sales));}catch(e){}
   if(!_fbSalesRef)return;
+  (removedIds||[]).forEach(id=>_fbSalesRef.child(id).remove().catch(()=>{}));
   if(changed){
     changed.forEach(s=>_fbSalesRef.child(s.id).set(s).catch(()=>{}));
   }else{
@@ -573,11 +644,18 @@ function saveS(changed){
 function saveCfg(){
   try{localStorage.setItem('cb_cfg',JSON.stringify(cfg));}catch(e){}
 }
+// 全端末で共有する設定（前売り券の発行・返金枚数、番号の上限、待ち時間）
+const SHARED_CFG=['psIssued','psRefunds','waitMin','flatPrice'];
+// 共有設定を変えたときだけFirebaseへ送る（呼び出しなどの保存で古い値を送らないように）
+function pushCfg(){
+  if(!_fbCfgRef)return;
+  const o={};SHARED_CFG.forEach(k=>{o[k]=cfg[k]??null;});
+  _fbCfgRef.update(o).catch(()=>{});
+}
 
 function psUsed(){return sales.reduce((n,s)=>n+(s.psTickets||0),0);}
 function psRemain(){return Math.max(0,cfg.psIssued-psUsed()-cfg.psRefunds);}
 function psRevenue(){return(cfg.psIssued-cfg.psRefunds)*PS_PRICE;}
-function soldQty(id){return sales.reduce((n,s)=>{const it=(s.items||[]).find(i=>i.id===id);return n+(it?it.qty:0);},0);}
 function fmt(n){return '¥'+n.toLocaleString('ja-JP');}
 
 // 使用中 = まだ受け取っていない注文の番号（受取済みになったら再利用できる）
@@ -585,7 +663,7 @@ function activeNums(){return new Set(sales.filter(s=>!s.received).map(s=>s.num))
 // 最後に発行した番号（Firebase使用時は共有カウンター）
 function lastNum(){return _fbCounter!=null?_fbCounter:(sales.length?sales[0].num:0);}
 function nextNumFrom(base){
-  const mx=cfg.numMax||99,act=activeNums();
+  const mx=NUM_MAX,act=activeNums();
   let n=(base||0)%mx+1;
   // 上限の次は1番に戻り、使用中の番号は飛ばす
   for(let i=0;i<mx;i++){if(!act.has(n))return n;n=n%mx+1;}
@@ -595,22 +673,40 @@ function nextNum(){return nextNumFrom(lastNum());}
 function allNumsFull(){return nextNum()===null;}
 function uncalled(){const u=sales.filter(s=>!s.called);return u.reverse();}
 function discountFor(qty,n){
-  const flat=PRODUCTS.flatMap(p=>Array(qty[p.id]||0).fill(p.price)).sort((a,b)=>b-a);
+  const flat=PRODUCTS.flatMap(p=>Array(qty[p.id]||0).fill(priceOf(p))).sort((a,b)=>b-a);
   return flat.slice(0,n).reduce((s,p)=>s+p,0);
 }
+// 均一価格がオンなら全品 FLAT_PRICE 円
+function priceOf(p){return cfg.flatPrice?FLAT_PRICE:p.price;}
 function psDiscount(){return discountFor(cart,psTickets);}
-function cartTotal(){return Math.max(0,PRODUCTS.reduce((s,p)=>s+(cart[p.id]||0)*p.price,0)-psDiscount());}
+function cartTotal(){return Math.max(0,PRODUCTS.reduce((s,p)=>s+(cart[p.id]||0)*priceOf(p),0)-psDiscount());}
+// おまけ（味ごとの個数）。bonusBy={plain:2,...}、bonus=合計個数
+// 古いデータ（true／味なしの個数）もそのまま表示できるようにしておく
+function bonusText(by){return PRODUCTS.filter(p=>by&&by[p.id]>0).map(p=>`${p.name}+${by[p.id]}`).join('・');}
+function bonusTotal(by){return Object.values(by||{}).reduce((a,b)=>a+(b||0),0);}
+function saleBonusBy(s){
+  if(s.bonusBy)return s.bonusBy;
+  const n=s.bonus===true?1:(s.bonus||0);
+  return n>0&&s.items&&s.items[0]?{[s.items[0].id]:n}:{};
+}
+function bonusTag(s){
+  if(s.bonus===true)return ` <span class="q-bonus">🎁 おまけ付き</span>`;
+  if(s.bonusBy&&bonusTotal(s.bonusBy)>0)return ` <span class="q-bonus">🎁 おまけ ${bonusText(s.bonusBy)}</span>`;
+  return s.bonus>0?` <span class="q-bonus">🎁 おまけ +${s.bonus}個</span>`:'';
+}
 function totalCartItems(){return Object.values(cart).reduce((s,v)=>s+v,0);}
 
-const PAGES=['sell','settings'];
+// 画面：注文受付(order)・呼び出し(call)・設定(settings)。端末ごとに最後の画面を覚える
 function goPage(id){
-  PAGES.forEach(p=>document.getElementById('page-'+p).classList.toggle('on',p===id));
-  document.querySelectorAll('.nav-tab').forEach((t,i)=>t.classList.toggle('on',PAGES[i]===id));
+  if(ROLE==='call')id='call';else if(id==='call')id='order';
+  const sell=id==='order'||id==='call';
+  const ps=document.getElementById('page-sell');
+  ps.classList.toggle('on',sell);
+  ps.classList.toggle('mode-order',id==='order');
+  ps.classList.toggle('mode-call',id==='call');
+  document.getElementById('page-settings').classList.toggle('on',id==='settings');
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.toggle('on',t.dataset.page===id));
   if(id==='settings'){
-    const inp=document.getElementById('nummax-input');
-    inp.value=cfg.numMax;inp.disabled=true;inp.style.opacity='.5';
-    const btn=document.getElementById('nummax-lock-btn');
-    btn.textContent='変更';btn.onclick=unlockNumMax;
     const winp=document.getElementById('waitmin-input');
     winp.value=cfg.waitMin||0;winp.disabled=true;winp.style.opacity='.5';
     const wbtn=document.getElementById('waitmin-lock-btn');
@@ -638,7 +734,7 @@ function setIssued(v){
   // 発行枚数は「使用済み＋返金済み」の合計を下回れない
   const minN=psUsed()+(cfg.psRefunds||0);
   cfg.psIssued=Math.max(minN,n);
-  saveCfg();renderPsCard();renderCart();
+  saveCfg();pushCfg();renderPsCard();renderCart();
 }
 // 販売画面の「返金」ボタン：確認してから1枚ずつ返金する
 function askRefundPs(){
@@ -648,6 +744,8 @@ function askRefundPs(){
   _cb=()=>{
     if(psRemain()<=0){showToast('返金できる前売り券がありません');return;}
     cfg.psRefunds=(cfg.psRefunds||0)+1;saveCfg();
+    // 複数端末で同時に返金しても数え漏れないよう、Firebaseでは +1 を transaction で行う
+    if(_fbCfgRef)_fbCfgRef.child('psRefunds').transaction(v=>(v==null?cfg.psRefunds-1:v)+1).catch(()=>{});
     // 会計中のカートで使う枚数が残りを超えたら減らす
     const pst=Math.min(psTickets,psRemain());
     psTickets=pst;
@@ -656,11 +754,16 @@ function askRefundPs(){
   };
   document.getElementById('ov-confirm').classList.add('on');
 }
+function setFlatPrice(on){
+  cfg.flatPrice=!!on;saveCfg();pushCfg();
+  renderProducts();renderCart();
+  showToast(on?'💴 全品300円均一にしました':'通常の値段に戻しました');
+}
 function setRefund(v){
   const n=Math.max(0,parseInt(v)||0);
   // 返金は「発行数 − 使用数」を超えられない
   cfg.psRefunds=Math.min(n,Math.max(0,cfg.psIssued-psUsed()));
-  saveCfg();renderPsCard();renderCart();
+  saveCfg();pushCfg();renderPsCard();renderCart();
 }
 
 // 待ち時間は0.5分（30秒）単位で扱う
@@ -698,18 +801,31 @@ function markReceived(num){
   s.received=true;
   saveS([s]);syncDisplayState();
   renderQueue();renderCart();renderDisplay();
-  showToast(`✅ ${num}番 受け取り済`);
+  showToast(`✅ ${num}番 受け取り済`,()=>{ // 押し間違えたとき用
+    s.received=false;saveS([s]);syncDisplayState();
+    renderQueue();renderCart();renderDisplay();
+    showToast(`↩ ${num}番を呼び出し中に戻しました`);
+  });
 }
 
-function callNext(){
-  const q=uncalled();if(!q.length)return;
-  q[0].called=true;saveS([q[0]]);
-  cfg.lastCalled=[q[0].num,...(cfg.lastCalled||[]).filter(n=>n!==q[0].num)].slice(0,5);
+// 待っている注文を1つ呼び出す（好きな順番で呼べる）
+function callOrder(id){
+  const s=sales.find(x=>x.id===id&&!x.called);if(!s)return;
+  s.called=true;saveS([s]);
+  cfg.lastCalled=[s.num,...(cfg.lastCalled||[]).filter(n=>n!==s.num)].slice(0,5);
   saveCfg();
   syncDisplayState();
   renderQueue();renderDisplay();
-  showToast(`📢 ${q[0].num}番！`);
+  showToast(`📢 ${s.num}番！`,()=>{ // 呼び間違えたとき用：呼び出し待ちに戻す
+    if(s.received)return;
+    s.called=false;saveS([s]);
+    cfg.lastCalled=(cfg.lastCalled||[]).filter(n=>n!==s.num);saveCfg();
+    syncDisplayState();renderQueue();renderDisplay();
+    showToast(`↩ ${s.num}番を呼び出し待ちに戻しました`);
+  });
 }
+// いちばん長く待っている注文を呼び出す
+function callNext(){const q=uncalled();if(q.length)callOrder(q[0].id);}
 
 function timeAgo(ts){
   if(!ts)return '';
@@ -724,6 +840,7 @@ function renderQueue(){
   const waiting=uncalled();
   document.getElementById('q-call').disabled=!waiting.length;
   document.getElementById('q-count').textContent=waiting.length?`${waiting.length}組`:'';
+
   // 呼び出し中（呼んだが未受け取り）パネル
   const nowEl=document.getElementById('q-now-called');
   // 長く待っている（若い）番号を上に。多いときは枠内をスクロール
@@ -734,7 +851,7 @@ function renderQueue(){
     nowEl.innerHTML=`<div class="q-now-label">📢 呼び出し中（${calledPending.length}組）</div>`+
       calledPending.map(s=>`<div class="q-now-row">
         <div class="q-now-numwrap"><div class="q-now-val">${s.num}</div><div class="q-now-ban">番</div></div>
-        <div class="q-now-detail">${fl2(s)}${s.psTickets>0?` <span class="q-row-ps">🎟${s.psTickets>1?' ×'+s.psTickets:''}</span>`:''}</div>
+        <div class="q-now-detail">${fl2(s)}${s.psTickets>0?` <span class="q-row-ps">🎟${s.psTickets>1?' ×'+s.psTickets:''}</span>`:''}${bonusTag(s)}</div>
         <button class="q-recv-btn" onclick="markReceived(${s.num})">✓ 受け取り済</button>
       </div>`).join('');
   }else{nowEl.hidden=true;nowEl.innerHTML='';}
@@ -743,7 +860,7 @@ function renderQueue(){
     body.innerHTML=`<div class="queue-empty">${sales.length===0?'まだ会計がありません':'全員お呼び出し済みです ✓'}</div>`;
     return;
   }
-  const mx=cfg.numMax,cur2=lastNum();
+  const mx=NUM_MAX,cur2=lastNum();
   const full=allNumsFull();
   const near=!full&&cur2>=mx-2&&cur2<mx;
   const fl=s=>(s.items||[]).map(i=>`${i.name}${i.qty>1?' ×'+i.qty:''}`).join(' ／ ');
@@ -759,21 +876,24 @@ function renderQueue(){
       <div class="q-row-info">
         <div class="q-row-items">${fl(s)}</div>
         <div class="q-row-meta">
-          ${s.psTickets>0?`<span class="q-row-ps">🎟 前売り${s.psTickets>1?' ×'+s.psTickets:''}</span>`:''}
+          ${s.psTickets>0?`<span class="q-row-ps">🎟 前売り${s.psTickets>1?' ×'+s.psTickets:''}</span>`:''}${bonusTag(s)}
           ${w?`<span class="q-row-wait${Date.now()-s.ts>=600000?' long':''}">⏱ ${w}待ち</span>`:''}
         </div>
       </div>
+      <button class="q-call-one" onclick="callOrder('${s.id}')">呼出す</button>
     </div>`;
   }).join('')+`</div>`;
   body.innerHTML=html;
 }
 
 function renderProducts(){
+  document.getElementById('flat-banner').hidden=!cfg.flatPrice;
+  document.getElementById('flat-chk').checked=!!cfg.flatPrice;
   document.getElementById('prod-grid').innerHTML=PRODUCTS.map(p=>
     `<button class="prod-btn" onclick="addItem('${p.id}')">
       <span class="prod-dot" style="background:${p.color}"></span>
       <div class="prod-name">${p.name}</div>
-      <div class="prod-price">${p.price}<small>円</small></div>
+      <div class="prod-price">${priceOf(p)}<small>円</small></div>
     </button>`).join('');
 }
 
@@ -786,11 +906,17 @@ function addItem(id){
 function changeQty(id,d){
   const n=(cart[id]||0)+d;
   if(n<=0){delete cart[id];}else{cart[id]=n;}
+  if(!cart[id])delete cartBonus[id]; // 商品を消したらその味のおまけも消す
   const pst=Math.min(psTickets,totalCartItems());
   psTickets=pst;
   renderCart();
 }
-function clearCart(){cart={};psTickets=0;renderCart();}
+function clearCart(){cart={};psTickets=0;cartBonus={};renderCart();}
+function changeBonus(id,d){
+  const n=Math.max(0,Math.min(99,(cartBonus[id]||0)+d));
+  if(n)cartBonus[id]=n;else delete cartBonus[id];
+  renderCart();
+}
 function changePsTickets(d){
   if(d>0){
     if(psTickets>=totalCartItems())return;
@@ -818,7 +944,13 @@ function renderCart(){
         <span class="qty-n">${q}</span>
         <button class="qty-btn" onclick="changeQty('${p.id}',1)">＋</button>
       </div>
-      <div class="cart-sub">${fmt(q*p.price)}</div>
+      <div class="cart-bonus${cartBonus[p.id]?' on':''}">
+        <span class="cart-bonus-lbl">🎁おまけ</span>
+        <button class="bonus-btn" onclick="changeBonus('${p.id}',-1)"${cartBonus[p.id]?'':' disabled'}>−</button>
+        <span class="cart-bonus-n">${cartBonus[p.id]||0}</span>
+        <button class="bonus-btn" onclick="changeBonus('${p.id}',1)">＋</button>
+      </div>
+      <div class="cart-sub">${fmt(q*priceOf(p))}</div>
     </div>`;}).join('');
     document.getElementById('ps-cart-row').hidden=false;
     const disc=psDiscount();
@@ -832,15 +964,16 @@ function renderCart(){
 }
 
 function openCheckout(){
-  if(allNumsFull()){showToast(`全番号使用中（上限 ${cfg.numMax||99}番）。受取済みにしてから登録してください`);return;}
+  if(allNumsFull()){showToast(`全番号使用中（上限 ${NUM_MAX}番）。受取済みにしてから登録してください`);return;}
   const num=nextNum(),items=PRODUCTS.filter(p=>(cart[p.id]||0)>0),disc=psDiscount();
   document.getElementById('ov-meta').innerHTML=
     `<span>整理番号：${num}番</span>${psTickets>0?`<span class="ov-ps-badge">🎟 前売り券 ×${psTickets}</span>`:''}`;
   document.getElementById('ov-items').innerHTML=
     items.map(p=>{const q=cart[p.id];return `<div class="ov-item">
       <span class="ov-item-name">${p.name} × ${q}</span>
-      <span class="ov-item-price">${fmt(q*p.price)}</span></div>`;}).join('')+
-    (disc>0?`<div class="ov-disc-row"><span>🎟 前売り割引 ×${psTickets}</span><span>−${fmt(disc)}</span></div>`:'');
+      <span class="ov-item-price">${fmt(q*priceOf(p))}</span></div>`;}).join('')+
+    (disc>0?`<div class="ov-disc-row"><span>🎟 前売り割引 ×${psTickets}</span><span>−${fmt(disc)}</span></div>`:'')+
+    (bonusTotal(cartBonus)>0?`<div class="ov-bonus-row"><span>🎁 おまけ</span><span>${bonusText(cartBonus)}</span></div>`:'');
   document.getElementById('ov-total').textContent=fmt(cartTotal());
   document.getElementById('ov-checkout').classList.add('on');
 }
@@ -853,12 +986,12 @@ async function completeSale(){
   finally{_saleBusy=false;btn.disabled=false;}
 }
 async function doCompleteSale(){
-  const mx=cfg.numMax||99;
+  const mx=NUM_MAX;
   if(!totalCartItems()){closeOv('ov-checkout');return;}
   if(psTickets>psRemain()){showToast(`前売り券の残りは${psRemain()}枚です`);return;}
   // 待っている間にカートが変わっても影響しないよう先に確定させる
-  const pst=psTickets,disc=psDiscount();
-  const items=PRODUCTS.filter(p=>(cart[p.id]||0)>0).map(p=>({id:p.id,name:p.name,qty:cart[p.id],price:p.price}));
+  const pst=psTickets,disc=psDiscount(),bonusBy={...cartBonus},bonus=bonusTotal(bonusBy);
+  const items=PRODUCTS.filter(p=>(cart[p.id]||0)>0).map(p=>({id:p.id,name:p.name,qty:cart[p.id],price:priceOf(p)}));
   const total=cartTotal();
   // 番号をFirebase transactionでアトミックに取得（複数端末の衝突防止）
   let num;
@@ -881,29 +1014,14 @@ async function doCompleteSale(){
   if(num==null){showToast(`全番号使用中（上限 ${mx}番）`);return;}
   const now=new Date(),ts=now.getTime();
   const time=`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-  const sale={id:saleId({ts,num}),num,time,items,total,psTickets:pst,discount:disc,called:false,received:false,ts};
+  const sale={id:saleId({ts,num}),num,time,items,total,psTickets:pst,discount:disc,bonus,bonusBy,called:false,received:false,ts};
   sales.unshift(sale);
-  saveS([sale]);closeOv('ov-checkout');cart={};psTickets=0;
+  saveS([sale]);closeOv('ov-checkout');cart={};psTickets=0;cartBonus={};
   syncDisplayState();
   renderCart();renderQueue();renderPsCard();
   showToast(`${num}番 会計完了！ ${fmt(total)}${pst>0?' 🎟':''}`);
 }
 
-function unlockNumMax(){
-  const inp=document.getElementById('nummax-input');
-  const btn=document.getElementById('nummax-lock-btn');
-  inp.disabled=false;inp.style.opacity='1';inp.focus();inp.select();
-  btn.textContent='確定';btn.onclick=()=>confirmNumMax(inp.value);
-}
-function confirmNumMax(v){
-  const n=Math.max(10,Math.min(999,parseInt(v)||99));
-  cfg.numMax=n;saveCfg();
-  const inp=document.getElementById('nummax-input');
-  const btn=document.getElementById('nummax-lock-btn');
-  inp.value=n;inp.disabled=true;inp.style.opacity='.5';
-  btn.textContent='変更';btn.onclick=unlockNumMax;
-  showToast('番号の上限を'+n+'に設定しました');
-}
 function unlockWaitMin(){
   const inp=document.getElementById('waitmin-input');
   const btn=document.getElementById('waitmin-lock-btn');
@@ -914,7 +1032,7 @@ function confirmWaitMin(v){
   const f=parseFloat(v)||0;
   // 0より大きい値は最低0.5分（0は自動計算の意味なので丸めて0にしない）
   const n=f>0?Math.max(0.5,Math.min(60,roundHalf(f))):0;
-  cfg.waitMin=n;saveCfg();syncDisplayState();
+  cfg.waitMin=n;saveCfg();pushCfg();syncDisplayState();
   const inp=document.getElementById('waitmin-input');
   const btn=document.getElementById('waitmin-lock-btn');
   inp.value=n;inp.disabled=true;inp.style.opacity='.5';
@@ -928,10 +1046,10 @@ function askReset(type){
     :'全データ（売上・前売り券・設定）を削除します。<br>この操作は取り消せません。';
   _cb=()=>{
     if(type==='sales'){sales=[];cfg.lastCalled=[];}
-    else{sales=[];cfg={psIssued:30,psRefunds:0,numMax:99,waitMin:0.5,lastCalled:[]};}
+    else{sales=[];cfg={psIssued:30,psRefunds:0,waitMin:0.5,flatPrice:false,lastCalled:[]};}
     // 番号も1番から振り直す
     if(_fbCounterRef){_fbCounterRef.set(0).catch(()=>{});_fbCounter=0;}
-    cart={};psTickets=0;saveS();saveCfg();
+    cart={};psTickets=0;cartBonus={};saveS();saveCfg();pushCfg();
     syncDisplayState(); // お客様表示も空にする
     renderProducts();renderCart();renderQueue();renderPsCard();
     showToast('リセットしました');
@@ -941,30 +1059,69 @@ function askReset(type){
 function doConfirm(){if(_cb)_cb();_cb=null;closeOv('ov-confirm');}
 function closeOv(id){document.getElementById(id).classList.remove('on');}
 let _tt;
-function showToast(msg){
+// undo を渡すと「元に戻す」ボタン付きで少し長めに出す
+function showToast(msg,undo){
   const el=document.getElementById('toast');
-  el.textContent=msg;el.classList.add('on');
-  clearTimeout(_tt);_tt=setTimeout(()=>el.classList.remove('on'),2800);
+  el.textContent=msg;
+  el.classList.toggle('has-act',!!undo);
+  if(undo){
+    const b=document.createElement('button');
+    b.className='toast-undo';b.textContent='元に戻す';
+    b.onclick=()=>{el.classList.remove('on');undo();};
+    el.appendChild(b);
+  }
+  el.classList.add('on');
+  clearTimeout(_tt);_tt=setTimeout(()=>el.classList.remove('on'),undo?6000:2800);
+}
+
+// ── 会計の取り消し（受付側） ──
+function openHistory(){renderHistory();document.getElementById('ov-history').classList.add('on');}
+function renderHistory(){
+  const list=document.getElementById('hist-list');
+  if(!sales.length){list.innerHTML='<div class="hist-empty">まだ会計がありません</div>';return;}
+  const fl=s=>(s.items||[]).map(i=>`${i.name}${i.qty>1?'×'+i.qty:''}`).join('・');
+  const st=s=>s.received?'受け取り済':s.called?'呼び出し中':'呼び出し待ち';
+  list.innerHTML=sales.slice(0,40).map(s=>`<div class="hist-row">
+    <div class="hist-num">${s.num}<small>番</small></div>
+    <div class="hist-info"><b>${fl(s)}</b>${s.psTickets>0?` 🎟${s.psTickets}`:''}${bonusTotal(saleBonusBy(s))?` 🎁${bonusText(saleBonusBy(s))}`:''}<br>
+      <span class="hist-st">${s.time||''}・${fmt(s.total)}・${st(s)}</span></div>
+    <button class="hist-cancel" onclick="askCancelSale('${s.id}')">取り消し</button>
+  </div>`).join('');
+}
+function askCancelSale(id){
+  const s=sales.find(x=>x.id===id);if(!s)return;
+  const lines=[`<b>${s.num}番</b>（${s.time||''}）の会計を取り消します。`];
+  if(s.total>0)lines.push(`お客様に <b>${fmt(s.total)}</b> をお返しください。`);
+  if(s.psTickets>0)lines.push(`前売り券 ${s.psTickets}枚 は未使用に戻ります。`);
+  lines.push('この操作は元に戻せません。');
+  document.getElementById('confirm-msg').innerHTML=lines.join('<br>');
+  _cb=()=>{
+    sales=sales.filter(x=>x.id!==id);
+    cfg.lastCalled=(cfg.lastCalled||[]).filter(n=>n!==s.num);saveCfg();
+    saveS([], [id]);syncDisplayState();
+    renderQueue();renderCart();renderPsCard();renderDisplay();renderHistory();
+    showToast(`🗑 ${s.num}番の会計を取り消しました`);
+  };
+  document.getElementById('ov-confirm').classList.add('on');
 }
 
 async function exportExcel(){
   if(!sales.length){showToast('データがありません');return;}
   if(typeof XLSX==='undefined'){showToast('ライブラリ読込中…しばらく待ってから再試行してください');return;}
   const sorted=[...sales].reverse(); // 会計順（番号は使い回すので番号順にしない）
-  const n=sorted.length; // データ行数 (2〜n+1行目)
   // ── 販売明細シート ──
   // 列: A=番号 B=時刻 C=プレーン D=のり塩 E=ケチャップ F=明太マヨ G=前売り券(使用) H=当日支払(円) I=呼出済
-  // K〜L列: 集計エリア（前売り券売上は発行時計上の固定値）
-  // A〜I列：データ本体（合計行なし）
-  const hdr=['番号','時刻','プレーン','のり塩','ケチャップ','明太マヨ','前売り券(使用)','当日支払(円)','呼出済'];
+  //     J〜M=おまけ(プレーン/のり塩/ケチャップ/明太マヨ)
+  // O〜P列: 集計エリア（前売り券売上は発行時計上の固定値）
+  const hdr=['番号','時刻',...PRODUCTS.map(p=>p.name),'前売り券(使用)','当日支払(円)','呼出済',...PRODUCTS.map(p=>`おまけ(${p.name})`)];
   const rows=[hdr];
   for(const s of sorted){
     const qty={};for(const it of s.items)qty[it.id]=it.qty;
     rows.push([s.num,s.time,qty['plain']||0,qty['norishio']||0,qty['ketchup']||0,qty['mentai']||0,
-      s.psTickets||0,s.total,s.called?'済':'未']);
+      s.psTickets||0,s.total,s.called?'済':'未',...PRODUCTS.map(p=>saleBonusBy(s)[p.id]||0)]);
   }
   const ws=XLSX.utils.aoa_to_sheet(rows);
-  // K〜L列：固定集計エリア（行を追加しても壊れない大きめ範囲）
+  // O〜P列：固定集計エリア（行を追加しても壊れない大きめ範囲）
   const R=9999;
   const psRev=psRevenue(); // 発行時売上（発行枚数−返金枚数）×PS_PRICE
   const summary=[
@@ -985,11 +1142,15 @@ async function exportExcel(){
     [`前売り券返金（¥${PS_PRICE}×返金枚数）`, -(cfg.psRefunds*PS_PRICE)],
     ['前売り券純売上（円）', psRev],
     ['当日現金売上（円）',{f:`SUM(H2:H${R})`}],
-    ['合計売上（円）',    {f:`L16+L17`}],
+    ['合計売上（円）',    {f:`P16+P17`}],
+    ['',''],
+    ['─ おまけ ─',''],
+    ...PRODUCTS.map((p,j)=>[`おまけ ${p.name}（個）`,{f:`SUM(${'JKLM'[j]}2:${'JKLM'[j]}${R})`}]),
+    ['おまけ合計（個）',  {f:`SUM(J2:M${R})`}],
   ];
   summary.forEach(([label,val],i)=>{
-    const kCell=XLSX.utils.encode_cell({c:10,r:i});
-    const lCell=XLSX.utils.encode_cell({c:11,r:i});
+    const kCell=XLSX.utils.encode_cell({c:14,r:i});
+    const lCell=XLSX.utils.encode_cell({c:15,r:i});
     ws[kCell]={v:label,t:'s'};
     if(val&&typeof val==='object'&&val.f){ws[lCell]={f:val.f,t:'n'};}
     else if(typeof val==='number'){ws[lCell]={v:val,t:'n'};}
@@ -997,8 +1158,8 @@ async function exportExcel(){
     else{ws[lCell]={v:'',t:'s'};}
   });
   const maxR=Math.max(rows.length,summary.length);
-  ws['!ref']=`A1:L${maxR}`;
-  ws['!cols']=[{wch:6},{wch:7},{wch:9},{wch:9},{wch:10},{wch:10},{wch:12},{wch:11},{wch:7},{wch:2},{wch:28},{wch:12}];
+  ws['!ref']=`A1:P${maxR}`;
+  ws['!cols']=[{wch:6},{wch:7},{wch:9},{wch:9},{wch:10},{wch:10},{wch:12},{wch:11},{wch:7},{wch:13},{wch:13},{wch:15},{wch:15},{wch:2},{wch:28},{wch:12}];
   // ── 集計シート（販売明細を参照）──
   const ws2=XLSX.utils.aoa_to_sheet([
     ['項目','値'],
@@ -1015,6 +1176,8 @@ async function exportExcel(){
     ['前売り券純売上（円）', psRev],
     ['当日現金売上（円）',             {f:`SUM(販売明細!H2:H${R})`}],
     ['合計売上（円）',                  {f:`B12+B13`}],
+    [],
+    ['おまけ合計（個）',               {f:`SUM(販売明細!J2:M${R})`}],
   ]);
   ws2['!cols']=[{wch:28},{wch:12}];
   // ── 設定シート（読込時に4〜7行目のB列を読む）──
@@ -1023,7 +1186,7 @@ async function exportExcel(){
     ['項目','値'],
     ['前売り券発行枚数',cfg.psIssued],
     ['前売り券返金枚数',cfg.psRefunds],
-    ['番号の上限',cfg.numMax],
+    ['番号の上限（固定）',NUM_MAX],
     ['予想待ち時間（分/人、0=自動）',cfg.waitMin||0],
   ]);
   ws3['!cols']=[{wch:28},{wch:10}];
@@ -1062,13 +1225,13 @@ async function exportExcel(){
 }
 function exportTSV(){
   if(!sales.length){showToast('データがありません');return;}
-  const hdr=['番号','時刻','プレーン','のり塩','ケチャップ','明太マヨ','前売り券','割引','合計','呼出済','備考'];
+  const hdr=['番号','時刻','プレーン','のり塩','ケチャップ','明太マヨ','前売り券','割引','合計','呼出済','備考',...PRODUCTS.map(p=>`おまけ${p.name}`)];
   const sorted=[...sales].reverse(); // 会計順（番号は使い回すので番号順にしない）
   const rows=[hdr];
   for(const s of sorted){
     const qty={};for(const it of s.items)qty[it.id]=it.qty;
     rows.push([s.num,s.time,qty['plain']||0,qty['norishio']||0,qty['ketchup']||0,qty['mentai']||0,
-      s.psTickets||0,s.discount||0,s.total,s.called?'済':'','']);
+      s.psTickets||0,s.discount||0,s.total,s.called?'済':'','',...PRODUCTS.map(p=>saleBonusBy(s)[p.id]||0)]);
   }
   const tsv=rows.map(r=>r.join('\t')).join('\n');
   navigator.clipboard.writeText(tsv)
@@ -1104,21 +1267,25 @@ function importExcel(input){
       if(wsCfg){
         const cd=XLSX.utils.sheet_to_json(wsCfg,{header:1,defval:''});
         const tryNum=(r,c,min)=>{const v=parseInt(cd[r]&&cd[r][c]);return(!isNaN(v)&&v>=min)?v:null;};
-        const pi=tryNum(3,1,0),pr=tryNum(4,1,0),nm=tryNum(5,1,10);
+        const pi=tryNum(3,1,0),pr=tryNum(4,1,0);
         const wmRaw=parseFloat(cd[6]&&cd[6][1]),wm=(!isNaN(wmRaw)&&wmRaw>=0)?roundHalf(wmRaw):null;
         if(pi!=null)cfg.psIssued=pi;
         if(pr!=null)cfg.psRefunds=pr;
-        if(nm!=null)cfg.numMax=Math.min(999,nm);
         if(wm!=null)cfg.waitMin=Math.min(60,wm);
-        saveCfg();
+        saveCfg();pushCfg();
       }
       // Load sales
       // 「販売入力」＝テキストコピーを貼ったシート（H=割引, J=呼出済）
       // 「販売明細」＝このアプリで書き出したExcel（H=当日支払, I=呼出済、割引列なし）
-      let ws=wb.Sheets['販売入力'],discCol=7,calledCol=9;
-      if(!ws&&wb.Sheets['販売明細']){ws=wb.Sheets['販売明細'];discCol=-1;calledCol=8;}
+      let ws=wb.Sheets['販売入力'],discCol=7,calledCol=9,totalCol=8;
+      if(!ws&&wb.Sheets['販売明細']){ws=wb.Sheets['販売明細'];discCol=-1;calledCol=8;totalCol=7;}
       if(!ws){showToast('「販売入力」または「販売明細」シートが見つかりません');return;}
       const data=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+      // おまけの列は見出しで探す：味ごと「おまけ(プレーン)」「おまけプレーン」、古い形式「おまけ(個)」「おまけ」
+      const hdrRow=data.find(r=>String(r[0]).trim()==='番号')||[];
+      const H=hdrRow.map(v=>String(v).trim());
+      const bonusCols=PRODUCTS.map(p=>{const i=H.findIndex(h=>h===`おまけ(${p.name})`||h===`おまけ${p.name}`);return i;});
+      const oldBonusCol=H.findIndex(h=>h==='おまけ(個)'||h==='おまけ');
       let start=0;
       for(let i=0;i<data.length;i++){const v=data[i][0];if(typeof v==='number'||(String(v).trim()!==''&&!isNaN(parseInt(v))&&parseInt(v)>0)){start=i;break;}}
       const newSales=[];
@@ -1134,23 +1301,28 @@ function importExcel(input){
         const pst=Math.max(0,parseInt(row[6])||0);
         const rawDisc=discCol>=0?parseInt(row[discCol]):NaN;
         const disc=(!isNaN(rawDisc)&&(rawDisc>0||pst===0))?rawDisc:discountFor(qty,pst);
-        const total=Math.max(0,items.reduce((s,it)=>s+it.qty*it.price,0)-disc);
+        // 支払額はシートの値を使う（300円均一で売った注文もそのまま戻る）
+        const sheetTotal=parseInt(row[totalCol]);
+        const total=!isNaN(sheetTotal)&&sheetTotal>=0?sheetTotal:Math.max(0,items.reduce((s,it)=>s+it.qty*it.price,0)-disc);
         const called=String(row[calledCol]).trim()==='済';
+        // おまけ：味ごとの列を読む。古い形式（合計だけ・○）は最初の商品の味として扱う
+        const bonusBy={};
+        PRODUCTS.forEach((p,j)=>{const c=bonusCols[j];if(c<0)return;const n=Math.max(0,Math.min(99,parseInt(row[c])||0));if(n)bonusBy[p.id]=n;});
+        if(!bonusTotal(bonusBy)&&oldBonusCol>=0){const bv=String(row[oldBonusCol]??'').trim();const n=bv==='○'?1:Math.max(0,Math.min(99,parseInt(bv)||0));if(n)bonusBy[items[0].id]=n;}
+        const bonus=bonusTotal(bonusBy);
         // 過去データなので、呼出済みのものは受け取り済みとして扱う
         // 時刻列から今日の日付で ts を復元（並び順を保つため行ごとに1msずらす）
         let time=String(row[1]||''),ts=null;
         if(typeof row[1]==='number'&&row[1]<1){const m=Math.round(row[1]*1440);time=`${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;}
         const tm=/^(\d{1,2}):(\d{2})/.exec(time);
         if(tm){const d=new Date();d.setHours(+tm[1],+tm[2],0,newSales.length%1000);ts=d.getTime();}
-        newSales.push({id:`s_imp${i}_${num}`,num,time,items,total,psTickets:pst,discount:disc,called,received:called,...(ts?{ts}:{})});
+        newSales.push({id:`s_imp${i}_${num}`,num,time,items,total,psTickets:pst,discount:disc,bonus,bonusBy,called,received:called,...(ts?{ts}:{})});
       }
       if(!newSales.length){showToast('読み込めるデータがありませんでした');return;}
       sales=newSales.reverse(); // シートの行順＝会計順。新しい順に並べ替える
       // 番号カウンターを読み込んだ最大番号に合わせる
       if(_fbCounterRef){_fbCounter=sales[0].num;_fbCounterRef.set(_fbCounter).catch(()=>{});}
       saveS();syncDisplayState();renderCart();renderQueue();renderPsCard();
-      const nminp=document.getElementById('nummax-input');
-      if(nminp)nminp.value=cfg.numMax;
       const wminp=document.getElementById('waitmin-input');
       if(wminp)wminp.value=cfg.waitMin||0;
       showToast(`✅ ${newSales.length}件 読み込み完了`);
@@ -1178,7 +1350,7 @@ function _applyDisplayState(pn, extra={}){
     // font size: scale down with more numbers
     const n=pn.length;
     // 呼び出し中が多いときも画面からはみ出さないよう段階的に縮める
-    const numFs=n===1?'min(42vw,240px)':n===2?'min(22vw,160px)':n<=8?'min(16vw,110px)':n<=15?'min(11vw,13vh,80px)':n<=30?'min(8vw,9vh,56px)':'min(6vw,6vh,40px)';
+    const numFs=n===1?'min(42vw,240px)':n===2?'min(22vw,160px)':n<=8?'min(16vw,110px)':n<=15?'min(11vw,13vh,80px)':n<=30?'min(7.5vw,8vh,52px)':'min(5vw,5vh,34px)';
     const banFs=n===1?'min(8vw,52px)':n===2?'min(5vw,32px)':n<=8?'min(4vw,24px)':n<=15?'min(3vw,18px)':'min(2.4vw,14px)';
     // remember which were already shown (no re-animation)
     const existing=new Set([...numsWrap.querySelectorAll('.disp-num')].map(e=>e.dataset.num));
@@ -1221,6 +1393,11 @@ function renderDisplay(){
   });
 }
 
+function renderVote(){
+  document.getElementById('dv-msg').textContent=VOTE_MSG;
+  document.getElementById('disp-vote').href=VOTE_URL;
+}
+
 function showDisplay(){
   // Hide nav + main pages; show display
   document.querySelector('.app-hd').hidden=true;
@@ -1228,6 +1405,7 @@ function showDisplay(){
   document.getElementById('page-sell').classList.remove('on');
   document.getElementById('page-settings').classList.remove('on');
   document.getElementById('page-display').classList.add('on');
+  renderVote();
   renderDisplay();
 }
 
@@ -1249,6 +1427,7 @@ function initDb(){
     _db=fbdb.ref('state');
     _fbSalesRef=fbdb.ref('sales');
     _fbCounterRef=fbdb.ref('counter');
+    _fbCfgRef=fbdb.ref('config');
 
     if(isDisplayMode()){
       // お客様表示：stateのみ購読
@@ -1300,6 +1479,20 @@ function initDb(){
         _fbCounter=snap.val()||0;
         try{renderCart();renderQueue();}catch(_){}
       });
+      // 共有設定（発行・返金枚数など）を購読。最初が空ならこの端末の値を登録
+      let firstCfg=true;
+      _fbCfgRef.on('value',snap=>{
+        const d=snap.val();
+        const wasFirst=firstCfg;firstCfg=false;
+        if(d===null){if(wasFirst)pushCfg();return;}
+        let changed=false;
+        SHARED_CFG.forEach(k=>{if(d[k]!=null&&d[k]!==cfg[k]){cfg[k]=d[k];changed=true;}});
+        if(!changed)return;
+        saveCfg();
+        psTickets=Math.min(psTickets,psRemain());
+        try{renderProducts();renderPsCard();renderCart();renderQueue();}catch(_){}
+        syncDisplayState();
+      });
       // /state を購読して lastCalled をスタッフ端末間で同期
       _db.on('value',snap=>{
         const d=snap.val()||{};
@@ -1313,16 +1506,16 @@ function initDb(){
 load();
 
 // Cross-tab storage events (same browser, different tabs)
+// 別タブで変えた設定・売上をこのタブにも反映する（古い値で上書きしないように）
 window.addEventListener('storage',e=>{
   if(e.key==='cb_cfg'){
-    try{const v=JSON.parse(e.newValue||'{}');
-      if(v.lastCalled)cfg.lastCalled=v.lastCalled;
-    }catch(_){}
-  }
-  if(e.key==='cb_s'){
+    try{const v=JSON.parse(e.newValue||'{}');if(v&&typeof v==='object')Object.assign(cfg,v);}catch(_){}
+  }else if(e.key==='cb_s'){
     try{const s=JSON.parse(e.newValue||'[]');if(Array.isArray(s))sales=s;}catch(_){}
-    if(isDisplayMode()){renderDisplay();}else{renderQueue();}
-  }
+  }else return;
+  if(isDisplayMode()){renderDisplay();return;}
+  psTickets=Math.min(psTickets,psRemain());
+  renderProducts();renderQueue();renderCart();renderPsCard();
 });
 
 if(isDisplayMode()){
@@ -1330,7 +1523,11 @@ if(isDisplayMode()){
   initDb();
 }else{
   renderProducts();renderCart();renderQueue();renderPsCard();
-  document.getElementById('staff-url').textContent=`${displayUrl()}?staff=${STAFF_KEY}`;
+  document.getElementById('staff-url-order').textContent=`${displayUrl()}?staff=${STAFF_KEY}&view=order`;
+  document.getElementById('staff-url-call').textContent=`${displayUrl()}?staff=${STAFF_KEY}&view=call`;
+  // 受付端末は注文受付、呼び出し端末（?view=call）は呼び出し画面だけ
+  goPage(ROLE);
+  if(ROLE==='call')document.querySelector('.app-hd').insertAdjacentHTML('beforeend','　<span style="color:var(--acc-text)">呼び出し</span>');
   initDb();
   // 「○分待ち」は時間が経つと変わるので30秒ごとに描き直す
   setInterval(()=>{if(document.getElementById('page-sell').classList.contains('on'))renderQueue();},30000);
