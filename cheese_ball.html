@@ -1430,17 +1430,20 @@ function initDb(){
     _fbCfgRef=fbdb.ref('config');
 
     if(isDisplayMode()){
-      // お客様表示：stateのみ購読
+      // お客様表示：注文データと共有設定を直接読んで表示を作る（読むだけ・書き込まない）
+      // 呼び出し端末が複数あっても、全員の呼び出しが必ず反映される
       const el=document.getElementById('disp-status');
       if(el)el.textContent='同期中…';
-      _db.on('value',snap=>{
+      _fbSalesRef.on('value',snap=>{
         if(el)el.textContent='';
         const d=snap.val()||{};
-        const lc=d.lastCalled||cfg.lastCalled||[];
-        cfg.lastCalled=lc;
-        const pn=d.pendingNums||[];
-        const prev=lc.filter(n=>!pn.includes(n)).slice(0,4);
-        _applyDisplayState(pn,{prevNums:prev,uncalledCount:d.uncalledCount||0,nextNum:d.nextNum??null,avgMin:d.avgMin??null});
+        sales=Object.values(d).filter(s=>s&&Array.isArray(s.items)).sort((a,b)=>(b.ts||0)-(a.ts||0));
+        renderDisplay();
+      });
+      _fbCfgRef.on('value',snap=>{
+        const d=snap.val();
+        if(d)SHARED_CFG.forEach(k=>{if(d[k]!=null)cfg[k]=d[k];});
+        renderDisplay();
       });
     }else{
       // スタッフ画面：sales をリアルタイム同期
@@ -1452,7 +1455,7 @@ function initDb(){
           // 初回でFirebaseが空 → 手元のデータをアップロード（消さない）
           if(wasFirst){if(sales.length)saveS();return;}
           // 全リセットされた場合
-          if(sales.length>0){sales=[];try{localStorage.setItem('cb_s','[]');}catch(_){}renderQueue();renderCart();renderPsCard();syncDisplayState();}
+          if(sales.length>0){sales=[];try{localStorage.setItem('cb_s','[]');}catch(_){}renderQueue();renderCart();renderPsCard();}
           return;
         }
         // 旧形式（番号キー・idなし）のデータにはidを付けて書き直す
@@ -1472,7 +1475,7 @@ function initDb(){
         try{renderQueue();}catch(e){console.warn('renderQueue error',e);}
         try{renderCart();}catch(e){console.warn('renderCart error',e);}
         try{renderPsCard();}catch(e){console.warn('renderPsCard error',e);}
-        syncDisplayState();
+        // お客様表示の状態は、変更した端末が書き込む（ここで書くと古い設定で上書きしてしまう）
       });
       // 番号カウンターを購読（注文欄・確認画面の番号を実際の採番と揃える）
       _fbCounterRef.on('value',snap=>{
@@ -1491,12 +1494,11 @@ function initDb(){
         saveCfg();
         psTickets=Math.min(psTickets,psRemain());
         try{renderProducts();renderPsCard();renderCart();renderQueue();}catch(_){}
-        syncDisplayState();
       });
       // /state を購読して lastCalled をスタッフ端末間で同期
       _db.on('value',snap=>{
         const d=snap.val()||{};
-        if(Array.isArray(d.lastCalled))cfg.lastCalled=d.lastCalled;
+        cfg.lastCalled=Array.isArray(d.lastCalled)?d.lastCalled:[];
       });
     }
   }catch(e){console.error('Firebase init error',e);}
